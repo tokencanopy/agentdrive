@@ -40,6 +40,8 @@ API_ENVIRONMENT = {
     "SESSION_SECRET",
     "MCP_PROXY_URL",
     "PORT",
+    "SCHEDULER_ENABLED",
+    "SCHEDULER_STATE_FILE",
 }
 
 
@@ -90,6 +92,21 @@ def test_api_is_local_mode_on_the_filesystem_store_with_the_sidecar():
     assert api["depends_on"]["migrate"]["condition"] == "service_completed_successfully"
     assert api["build"] == "." and api["image"] == "agentdrive:selfhost"
     assert api["stop_grace_period"] == "20s"
+
+
+def test_the_api_container_runs_the_maintenance_jobs_on_its_own_store():
+    """The jobs delete what the API wrote, so they run INSIDE its container
+    (the supervisor starts the scheduler): no override can point them at a
+    different database or store. Their state lives on the data volume, as a
+    dot-file the filesystem store never lists as an object."""
+    api = _compose()["services"]["api"]
+    env = api["environment"]
+    assert env["SCHEDULER_ENABLED"] == "true"
+    root = env["STORAGE_FS_ROOT"]
+    state = env["SCHEDULER_STATE_FILE"]
+    assert state.startswith(root + "/.")
+    assert f"data:{root}" in api["volumes"]
+    assert api["init"] is True
 
 
 def test_the_published_port_and_the_public_base_url_cannot_come_apart():
@@ -169,8 +186,16 @@ def test_the_smoke_script_runs_nothing_the_readme_does_not_show():
     """The other direction of parity: every `exec` the script runs against
     the stack is a command the README shows the reader."""
     readme = " ".join(_readme_quickstart())
+    whole_readme = " ".join(README.read_text().split())
     for line in _smoke_as_readme_would_spell_it().splitlines():
         line = line.strip()
+        if "exec api python -m agentdrive.jobs.scheduler" in line:
+            # The maintenance commands sit outside the quickstart block; the
+            # script runs each job by name where the README shows one.
+            command = line.split("exec api", 1)[1].split("|")[0].split(">")[0].split(")")[0]
+            command = " ".join(command.replace('"$name"', "gc-daily").split())
+            assert f"exec api {command}" in whole_readme, f"the README never shows: {command}"
+            continue
         if "docker compose -f compose.selfhost.yml exec api" not in line:
             continue
         command = line.split("exec api", 1)[1].strip().split("|")[0].strip().rstrip(")")

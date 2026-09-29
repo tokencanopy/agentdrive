@@ -168,6 +168,43 @@ else
 fi
 rm -f "$AFTER_BODY"
 
+echo "== the maintenance jobs run on this install"
+# Without the scheduler, deleted content is never reclaimed. It runs inside
+# the api container; its loop records the minute it last handled, so a state
+# file that appears proves the loop itself is alive (it ticks every minute).
+LOOP_ALIVE=""
+for _ in $(seq 1 45); do
+  if $COMPOSE exec -T api python -m agentdrive.jobs.scheduler --status > /dev/null; then LOOP_ALIVE=1; break; fi
+  sleep 2
+done
+if [ -n "$LOOP_ALIVE" ]; then ok "the scheduler loop is ticking"; else bad "the scheduler loop never recorded a tick"; fi
+# Then each scheduled job runs once, now, against this install's database and
+# store — the rows the steps above created included; the sweeps' age rules
+# mean nothing that young is deleted, which the test suite proves on the same
+# store. A run that met the loop's own run of the same job reports
+# `"skipped": true` (lock held); that is retried, never counted as a pass.
+JOBS=$($COMPOSE exec -T api python -m agentdrive.jobs.scheduler --list | grep -v '^ ' | awk '{print $1}')
+RUN_OUT=$(mktemp)
+for name in gc-hourly gc-daily gc-weekly usage-snapshot; do
+  if ! echo "$JOBS" | grep -qx "$name"; then bad "--list does not show $name"; continue; fi
+  result=""
+  for _ in 1 2 3; do
+    if $COMPOSE exec -T api python -m agentdrive.jobs.scheduler --run "$name" > "$RUN_OUT" 2>&1; then
+      if grep -q '"skipped": true' "$RUN_OUT"; then result="skipped"; sleep 5; continue; fi
+      if grep -q "Traceback" "$RUN_OUT"; then result="traceback"; break; fi
+      result="ok"; break
+    fi
+    result="failed"; break
+  done
+  if [ "$result" = "ok" ]; then
+    ok "scheduled job $name exits 0"
+  else
+    bad "scheduled job $name: $result"
+    sed 's/^/        /' "$RUN_OUT" | tail -20
+  fi
+done
+rm -f "$RUN_OUT"
+
 echo "== the container logs for THIS run are clean"
 LOGS=$($COMPOSE logs --no-color --since "$START" api 2>/dev/null)
 if echo "$LOGS" | grep -q "Traceback"; then bad "api log has a traceback"; else ok "api log has no traceback"; fi

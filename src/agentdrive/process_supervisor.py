@@ -1,4 +1,5 @@
-"""Run the API, the private MCP ingress, and the MCP sidecar as one process.
+"""Run the API, the private MCP ingress, the MCP sidecar and (for a
+self-hosted install) the job scheduler as one process.
 
 Cloud Run's existing service owns the canonical AgentDrive domain, so the
 MCP cannot be a second service without changing the domain-routing topology.
@@ -19,6 +20,13 @@ ingress from a closed route.
 Generated per boot and never persisted: it is not in Terraform state, not in
 Secret Manager, and not in any log. A revision restart mints a new one, and
 the only two processes that need it are started by this file.
+
+THE SCHEDULER. With `SCHEDULER_ENABLED=true` (set by `compose.selfhost.yml`,
+never by the hosted deployment, whose platform scheduler runs the same jobs)
+this also starts `python -m agentdrive.jobs.scheduler`, which runs garbage
+collection and usage maintenance on their schedule. It lives here rather than
+in a container of its own so the jobs that DELETE content can never be
+configured apart from the API that wrote it: one environment, one volume.
 """
 
 from __future__ import annotations
@@ -94,6 +102,14 @@ def _internal_ingress_command() -> list[str]:
         "--workers",
         "1",
     ]
+
+
+def _scheduler_command() -> list[str]:
+    return [sys.executable, "-m", "agentdrive.jobs.scheduler"]
+
+
+def scheduler_enabled(source: Mapping[str, str]) -> bool:
+    return source.get("SCHEDULER_ENABLED", "").strip().lower() in {"1", "true", "yes"}
 
 
 def _terminate(processes: Sequence[subprocess.Popen[bytes]]) -> None:
@@ -187,6 +203,14 @@ def main() -> int:
                 subprocess.Popen(_mcp_command(), env=mcp_environment)  # noqa: S603
             )
             log.info("started AgentDrive MCP sidecar on 127.0.0.1:%s", MCP_SIDECAR_PORT)
+
+        if scheduler_enabled(os.environ):
+            # No proof: the jobs talk to Postgres and the store, never to
+            # the ingress.
+            children.append(
+                subprocess.Popen(_scheduler_command(), env=os.environ.copy())  # noqa: S603
+            )
+            log.info("started AgentDrive job scheduler")
 
         # The PUBLIC API child, which deliberately does NOT receive the proof:
         # it neither calls the ingress nor needs to recognise it.
