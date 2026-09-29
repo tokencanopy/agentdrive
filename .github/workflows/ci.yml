@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-go@v5
@@ -86,7 +86,7 @@ jobs:
           --health-cmd "pg_isready -U agentdrive -d agentdrive"
           --health-interval 3s --health-timeout 3s --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Full history: the schema parity guard
           # (tests/test_schema_baseline_parity.py) resolves
@@ -141,7 +141,7 @@ jobs:
           --health-cmd "pg_isready -U agentdrive -d agentdrive"
           --health-interval 3s --health-timeout 3s --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Start the GCS emulator
         run: |
           docker run -d --rm --name fake-gcs -p 4443:4443 \
@@ -175,7 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -201,7 +201,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version-file: design-system/.nvmrc
@@ -225,6 +225,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: The README quickstart, verbatim, then over HTTP
         run: scripts/selfhost-smoke.sh --down
