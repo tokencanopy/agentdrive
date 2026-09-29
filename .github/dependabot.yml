@@ -1,0 +1,74 @@
+version: 2
+
+# Minor and patch updates are grouped into one pull request per ecosystem per
+# week to keep noise low; major bumps come as individual pull requests so they
+# get focused review.
+updates:
+  # The service resolves through uv.lock, so use the native `uv` ecosystem —
+  # `pip` reads pyproject.toml but does not update the lockfile.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps"
+    groups:
+      uv-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # The root npm workspace: the MCP transport (mcp/auth, mcp/server).
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(mcp)"
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # The manifests the image installs the MCP transport from. Their
+  # dependencies are copied from the workspace packages by
+  # deploy/mcp/sync-manifests.py, and CI fails when the two differ.
+  - package-ecosystem: "npm"
+    directory: "/deploy/mcp"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(image)"
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/design-system"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(design-system)"
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(docker)"

@@ -157,9 +157,17 @@ jobs:
       - name: Disable the unrelated Google Chrome apt repository
         run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources
       - run: uv run playwright install --with-deps chromium
-      - env:
+      - name: Browser-prove the private viewer
+        env:
           GCS_BUCKET: agentdrive-test
           GCS_EMULATOR_HOST: http://localhost:4443
+          # The viewer is off unless its origin is configured; the suite
+          # drives it on viewer.localhost, framed by app.localhost.
+          VIEWER_BASE_URL: http://viewer.localhost:8766
+          VIEWER_EMBED_ORIGINS: http://app.localhost:8765
+        # The browser conftest fails closed for unavailable services and for a
+        # collected suite that never reaches a test call; -ra keeps skip
+        # reasons visible so this proof cannot degrade into a green skip.
         run: uv run pytest tests/browser/ -m browser -q -ra --strict-markers
 
   mcp:
