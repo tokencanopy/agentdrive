@@ -398,3 +398,57 @@ def test_a_stop_that_lands_before_the_child_starts_still_stops_it():
 def test_a_signal_death_reports_as_a_shell_would():
     result = _runner().run(_job("sig", "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"))
     assert result.exit_code == 143
+
+
+def test_restart_preserves_unstarted_jobs_in_an_interrupted_batch(tmp_path):
+    state = tmp_path / "state.json"
+    first = _serve(
+        _utc(2026, 10, 4, 3, 59, 30), _utc(2026, 10, 4, 4, 0, 30),
+        {"gc-hourly": timedelta(minutes=1)}, state_path=state,
+    )
+    assert first == [("gc-hourly", "04:00")]
+    resumed = _serve(
+        _utc(2026, 10, 4, 4, 1), _utc(2026, 10, 4, 4, 2), state_path=state,
+    )
+    assert resumed == [("gc-weekly", "04:01"), ("usage-snapshot", "04:01")]
+
+
+def test_manual_cli_terminates_its_child_on_sigterm(tmp_path):
+    import os
+    import signal
+    import subprocess
+    import time
+
+    marker = tmp_path / "child.pid"
+    child_code = (
+        f"import os,time; open({str(marker)!r}, 'w').write(str(os.getpid())); "
+        "time.sleep(60)"
+    )
+    wrapper = (
+        "import sys\n"
+        "from agentdrive.jobs import scheduler as s\n"
+        f"s.module_command = lambda job: [sys.executable, '-c', {child_code!r}]\n"
+        "s.Runner.__init__.__defaults__ = (s.module_command,)\n"
+        "raise SystemExit(s.main(['--run', 'gc-daily']))\n"
+    )
+    process = subprocess.Popen([sys.executable, "-c", wrapper])
+    child_pid = None
+    try:
+        deadline = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert marker.exists()
+        child_pid = int(marker.read_text())
+        process.send_signal(signal.SIGTERM)
+        assert process.wait(timeout=15) == 143
+        with pytest.raises(ProcessLookupError):
+            os.kill(child_pid, 0)
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        if child_pid:
+            import contextlib
+
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(child_pid, signal.SIGKILL)

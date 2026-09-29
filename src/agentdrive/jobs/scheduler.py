@@ -328,15 +328,19 @@ def serve(
             state.save(state_path)
             continue
         due = due_between(jobs, last, tick, state.started)
-        last = tick
-        state.last_tick = tick
-        state.save(state_path)
         for job in due:
             if runner.stopping:
                 break
             state.started[job.name] = now()
             state.save(state_path)
             runner.run(job)
+        else:
+            # Only mark the batch handled after every due job started. If
+            # shutdown interrupts it, retain the old checkpoint so a restart
+            # catches up pending jobs; started deduplicates the earlier ones.
+            last = tick
+            state.last_tick = tick
+            state.save(state_path)
     log.info("at=scheduler.stopped")
     return 0
 
@@ -379,6 +383,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if state.last_tick else 1
 
     runner = Runner()
+    def _stop(signum: int, _frame: object) -> None:
+        log.info("at=scheduler.stopping signal=%s", signum)
+        runner.stop()
+
+    signal.signal(signal.SIGTERM, _stop)
+    signal.signal(signal.SIGINT, _stop)
     if args.run:
         job = next((j for j in SCHEDULE if j.name == args.run), None)
         if job is None:
@@ -386,12 +396,6 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         return runner.run(job).exit_code
 
-    def _stop(signum: int, _frame: object) -> None:
-        log.info("at=scheduler.stopping signal=%s", signum)
-        runner.stop()
-
-    signal.signal(signal.SIGTERM, _stop)
-    signal.signal(signal.SIGINT, _stop)
     return serve(runner, state_path=_state_path())
 
 
