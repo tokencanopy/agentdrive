@@ -1,0 +1,38 @@
+{
+  "name": "@tokencanopy/mcp-auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reusable OAuth protected-resource boundary for Token Canopy MCP servers",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "jose": "^6.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.5",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0"
+}

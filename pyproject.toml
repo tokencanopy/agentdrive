@@ -1,0 +1,165 @@
+[project]
+name = "agentdrive"
+version = "0.0.1"
+description = "A collaboration workspace for your agents — v0 (beta)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "asyncpg>=0.30",
+    "google-cloud-storage>=2.18",
+    "pydantic-settings>=2.5",
+    "markdown-it-py>=3.0",
+    "mdit-py-plugins>=0.4",
+    "pygments>=2.18",
+    "selectolax>=0.3",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.12",
+    "httpx>=0.27",
+    "slowapi>=0.1.9",
+    # PyJWT verifies the Hub-issued product tokens (identity/product_token.py)
+    # with RS256/ES256, which need `cryptography`; declare the extra rather
+    # than inherit the package from google-auth.
+    "pyjwt[crypto]>=2.9",
+    "openpyxl>=3.1.5",
+    "mammoth>=1.11",
+    "pyarrow>=18",
+    "python-pptx>=1.0",
+    "pyyaml>=6.0",
+    "defusedxml>=0.7",
+]
+
+[project.scripts]
+# The self-hosted install's API-key CLI (AUTH_MODE=local). Also
+# `python -m agentdrive.keys`. It replaced `agentdrive-tokens` when opaque
+# keys replaced the local JWT issuer (open-source design §4.2, 2026-09-21).
+agentdrive-keys = "agentdrive.keys:main"
+# `agentdrive-seed` and `agentdrive-provision-org` are gone with the legacy
+# identity plane they seeded (users/organizations/org_memberships/tiers, none
+# of which exist in the day-0 schema). Leaving the entry points would ship a
+# wheel whose console scripts ImportError on first run -- an installed-but-
+# broken command is worse than an absent one. Layer 3 adds a v0 provisioning
+# entry point once drives have an owner model again.
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3",
+    "ruff>=0.7",
+    "pytest-asyncio>=0.24",
+    "asgi-lifespan>=2.1",
+    # PDF generation for test fixtures only (the embed pipeline's PDF
+    # modality reads PDFs but doesn't produce them). reportlab is the
+    # de-facto Python PDF writer; staying as a dev-dep keeps it off
+    # the Cloud Run image.
+    "reportlab>=4.2",
+    # Coverage instrumentation. Not opt-in by default in
+    # `[tool.pytest.ini_options]` because instrumenting the import
+    # graph adds ~20% to a full-suite run; invoke explicitly with
+    # `uv run pytest --cov=src/agentdrive`. CI gates on a threshold
+    # via `--cov-fail-under=...`.
+    "pytest-cov>=6.0",
+    "pytest-xdist>=3.8.0",
+    # Spec-driven response validation against the served OpenAPI (§11.4
+    # conformance). Used by tests/conformance/test_schemathesis.py; stays a
+    # dev-dep so the Cloud Run image carries no hypothesis runtime.
+    "schemathesis>=3.34",
+    # `jsonschema` treats `format` as an annotation unless a checker is
+    # registered, so without this every `format: date-time` in the served spec
+    # is unasserted and a handler could emit `19/08/2026 06:20:11` for a field
+    # the contract calls RFC 3339. Used by
+    # tests/conformance/test_response_schema_conformance.py.
+    "jsonschema>=4.21",
+    "rfc3339-validator>=0.1.4",
+    "pytest-playwright>=0.7,<1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# `archive/` needs no entry here: it sits outside src/, so it is already
+# out of the wheel and out of both Dockerfiles' `COPY src ./src`. Recorded
+# so nobody "fixes" its absence.
+packages = ["src/agentdrive"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# Frozen legacy subsystems (v0 contract reset, Layer 0). Never deleted,
+# never linted, never collected -- they are the record of what the surface
+# was, not code we maintain. Un-archiving one means deleting its entry
+# here, in tests/test_archive_is_unwired.py, and in norecursedirs below,
+# in the same PR.
+extend-exclude = ["archive"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest MUST mutate os.environ before the first `import agentdrive`:
+# DATABASE_URL / GCS_BUCKET / SESSION_SECRET are read at module import
+# time. The import block after that setup is the deliberate shape.
+"tests/conftest.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# `tests/e2e/` is the production-targeted black-box harness. Excluded from
+# default discovery so `uv run pytest` doesn't accidentally hit prod;
+# run it explicitly via `pytest tests/e2e/ -m e2e` (or the helper script).
+# `archive/` holds the frozen legacy subsystems and their suites.
+# `testpaths` already keeps a bare `uv run pytest` out of it; this also
+# covers `pytest .` and IDE runners that override rootdir.
+norecursedirs = ["e2e", "archive", "browser"]
+markers = [
+    "browser: hermetic private-viewer Chromium integration",
+    "e2e: production end-to-end test (hits agentdrive.run; needs .env.e2e)",
+    "e2e_smoke: subset that runs in ~30s after every deploy",
+    "e2e_stress: bounded-burst stress; only runs with --stress",
+]
+asyncio_mode = "auto"
+# All async fixtures and tests share a single session-scoped event loop so
+# the asyncpg pool (created during app lifespan) can serve every test.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+
+[tool.coverage.run]
+source = ["src/agentdrive"]
+branch = true
+# Skip third-party shims + the pure-data mock fixtures (no exercisable
+# branches), and the scripts/ entry-points (test via integration, not
+# in-process; instrumenting them would bloat report noise without
+# adding signal).
+omit = [
+    # Belt-and-braces: `source` is already scoped to src/agentdrive, so
+    # archive/ can never be measured. Listed anyway so a future widening
+    # to `source = ["."]` can't silently pull 105 frozen modules into the
+    # report and crater the percentage.
+    "archive/*",
+    "src/agentdrive/scripts/*",
+    "src/agentdrive/mock/*",
+]
+# `thread` (the default) is correct for FastAPI + asyncpg on a single
+# event loop — async tasks share the main thread; coverage's default
+# tracer captures their execution. Don't add `greenlet`/`gevent` —
+# the codebase doesn't use either and listing them would force
+# coverage to load tracer plugins that aren't installed.
+concurrency = ["thread"]
+relative_files = true
+
+[tool.coverage.report]
+# `precision=1` so flake-adjacent ±0.4% drift doesn't churn the CI
+# diff; `skip_covered` hides 100%-covered files from the terminal
+# summary so reviewers can focus on the gaps that matter.
+precision = 1
+skip_covered = true
+show_missing = true
+exclude_also = [
+    # Defensive branches that exist only for type-checker satisfaction.
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    # `assert never`-style exhaustiveness guards in match statements.
+    "case _:",
+    # Repr / debug-only branches.
+    "def __repr__",
+]

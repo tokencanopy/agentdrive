@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "issuer": "https://api.tokencanopy.test",
+  "audience": "agentdrive",
+  "algorithm": "RS256",
+  "ttlSeconds": 300,
+  "plan": "plus",
+  "task": {
+    "jti": "agenttag-task-interop-jti",
+    "input": {
+      "principalId": "tcprn_0123456789abcdef",
+      "workspaceId": "tcwsp_0123456789abcdef",
+      "taskId": "att_11111111111111111111111111111111",
+      "taskNonce": "atr_22222222222222222222222222222222",
+      "sourceIds": [
+        "ctxs_0123456789abcdef"
+      ],
+      "profileId": "ctxp_0123456789abcdef",
+      "applicationId": "ata_33333333333333333333333333333333"
+    },
+    "purpose": "task_context_exchange",
+    "namespace": ".agenttag/tcprn_0123456789abcdef/"
+  },
+  "application": {
+    "jti": "agenttag-application-interop-jti",
+    "input": {
+      "principalId": "tcprn_0123456789abcdef",
+      "workspaceId": "tcwsp_0123456789abcdef",
+      "taskId": "att_11111111111111111111111111111111",
+      "applicationId": "ata_33333333333333333333333333333333",
+      "eventId": "atse_44444444444444444444444444444444",
+      "expectedVersion": 7,
+      "bodySha256": "5555555555555555555555555555555555555555555555555555555555555555"
+    },
+    "purpose": "application_submission_event",
+    "namespace": ".agenttag/tcprn_0123456789abcdef/applications/ata_33333333333333333333333333333333"
+  }
+}

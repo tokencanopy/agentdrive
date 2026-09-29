@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="robots" content="noindex" />
+<title>Artifact viewer</title>
+{# The same document stylesheet the public surface serves — one styling of a
+   rendered artifact, two hosts. No inline style/script: the CSP is
+   style-src 'self' / script-src 'self', exactly as on the public page. #}
+<link rel="stylesheet" href="/view/static/viewer.css?v={{ asset_v }}" />
+<link rel="stylesheet" href="/view/static/vendor/pdfjs/pdf_viewer.css" />
+{# Data, not code: the shell reads its allowed embed origins from this inert
+   JSON block. |tojson escapes <, >, & so the block cannot be broken out of. #}
+<script id="viewer-config" type="application/json">{{ config | tojson }}</script>
+<script type="module" src="/view/static/shell.js?v={{ asset_v }}"></script>
+</head>
+<body class="mode-loading">
+{# The shell renders exactly one document per iframe lifetime. Everything
+   below is a placeholder the shell script replaces; there is deliberately no
+   chrome bar — the console around the iframe owns navigation, download, and
+   sharing affordances. #}
+<header class="doc-head" id="shell-head" hidden>
+  <h1 id="shell-title"></h1>
+  <p class="doc-path" id="shell-path" hidden></p>
+  <p class="doc-meta" id="shell-meta"></p>
+</header>
+<main class="doc" id="shell-doc" aria-live="polite">
+  <div class="download-card" id="shell-status"><p>Waiting for the console…</p></div>
+</main>
+</body>
+</html>

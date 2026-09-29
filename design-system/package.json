@@ -1,0 +1,65 @@
+{
+  "name": "@tokencanopy/agentdrive-design-system",
+  "version": "0.1.0",
+  "description": "AgentDrive design system — React components over the canonical agentdrive.css (single source of truth).",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tokencanopy/agentdrive.git",
+    "directory": "design-system"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/agentdrive-ds.umd.cjs",
+  "module": "./dist/agentdrive-ds.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/agentdrive-ds.js",
+      "require": "./dist/agentdrive-ds.umd.cjs"
+    },
+    "./styles.css": "./dist/styles/agentdrive.css"
+  },
+  "scripts": {
+    "build:css": "node scripts/sync-css.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:lib": "vite build",
+    "build:styles": "node scripts/package-styles.mjs",
+    "check:pack": "node scripts/package-styles.mjs --check",
+    "build": "npm run build:css && npm run typecheck && npm run build:lib && npm run build:styles",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "peerDependencies": {
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "^8",
+    "@storybook/addon-essentials": "^8",
+    "@storybook/react-vite": "^8",
+    "@testing-library/react": "^16",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4",
+    "jsdom": "^25",
+    "react": "^18",
+    "react-dom": "^18",
+    "storybook": "^8",
+    "typescript": "^5",
+    "vite": "^5",
+    "vite-plugin-dts": "^4",
+    "vitest": "^2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

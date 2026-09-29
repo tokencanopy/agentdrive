@@ -1,0 +1,222 @@
+name: ci
+
+# Every check a pull request must pass. Ported from the Token Canopy
+# monorepo's drive suite (open-source design §4.8), without its path-based
+# relevance classifier: in this repository everything is relevant.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://agentdrive:dev@localhost:5432/agentdrive
+
+jobs:
+  lint:
+    name: ruff and the publish gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - name: Publish gate
+        run: python3 scripts/check_public_snapshot.py
+
+  openapi:
+    name: OpenAPI contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: false
+      - name: Test the compatibility policy
+        run: make openapi-compat-test
+      - name: Reject breaking stable changes against the base branch
+        if: github.event_name == 'pull_request'
+        env:
+          OPENAPI_BASE: origin/${{ github.base_ref }}:tests/openapi.golden.json
+          OASDIFF_FORMAT: githubactions
+        run: make openapi-compat-check
+
+  suite:
+    name: suite (${{ matrix.backend }}${{ matrix.mount_prefix && ', mounted' || '' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: gcs
+            mount_prefix: ""
+            public_base_url: http://localhost:8000
+          - backend: gcs
+            mount_prefix: /drive
+            public_base_url: http://localhost:8000/drive
+          - backend: fs
+            mount_prefix: ""
+            public_base_url: http://localhost:8000
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: agentdrive
+          POSTGRES_PASSWORD: dev
+          POSTGRES_DB: agentdrive
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agentdrive -d agentdrive"
+          --health-interval 3s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the schema parity guard
+          # (tests/test_schema_baseline_parity.py) resolves
+          # `git merge-base HEAD origin/main` and fails loudly under CI=true
+          # when a shallow clone hides it.
+          fetch-depth: 0
+      # Every leg, the fs one included: parts of the suite build a GCS client
+      # regardless of the backend under test, and against a closed port each
+      # of those waits out a two-minute retry.
+      - name: Start the GCS emulator
+        run: |
+          docker run -d --rm --name fake-gcs -p 4443:4443 \
+            fsouza/fake-gcs-server:latest -scheme http -port 4443 -public-host localhost:4443
+          for _ in $(seq 1 30); do nc -z localhost 4443 && break; sleep 1; done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: Usage-limit acceptance
+        if: matrix.backend == 'gcs' && matrix.mount_prefix == ''
+        env:
+          GCS_EMULATOR_HOST: http://localhost:4443
+        run: uv run python tests/e2e/local_beta_limits_e2e.py
+      - name: pytest
+        env:
+          STORAGE_BACKEND: ${{ matrix.backend }}
+          STORAGE_FS_ROOT: ${{ runner.temp }}/agentdrive-store
+          GCS_BUCKET: agentdrive-test
+          GCS_EMULATOR_HOST: http://localhost:4443
+          MOUNT_PREFIX: ${{ matrix.mount_prefix }}
+          PUBLIC_BASE_URL: ${{ matrix.public_base_url }}
+        run: uv run pytest tests/ -n auto -q --ignore=tests/browser
+      - name: SnipIt extension tests
+        if: matrix.backend == 'gcs' && matrix.mount_prefix == ''
+        run: node --test "extensions/snipit/tests/**/*.test.js"
+
+  browser:
+    name: private viewer (browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: agentdrive
+          POSTGRES_PASSWORD: dev
+          POSTGRES_DB: agentdrive
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agentdrive -d agentdrive"
+          --health-interval 3s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the GCS emulator
+        run: |
+          docker run -d --rm --name fake-gcs -p 4443:4443 \
+            fsouza/fake-gcs-server:latest -scheme http -port 4443 -public-host localhost:4443
+          for _ in $(seq 1 30); do nc -z localhost 4443 && break; sleep 1; done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      # The runner's Google Chrome apt source has broken `--with-deps` before;
+      # Playwright brings its own Chromium, so that source is never needed.
+      - name: Disable the unrelated Google Chrome apt repository
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources
+      - run: uv run playwright install --with-deps chromium
+      - env:
+          GCS_BUCKET: agentdrive-test
+          GCS_EMULATOR_HOST: http://localhost:4443
+        run: uv run pytest tests/browser/ -m browser -q -ra --strict-markers
+
+  mcp:
+    name: MCP transport
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run format:check --workspaces
+      - run: npm run lint --workspaces
+      - run: npm run typecheck --workspaces
+      - run: npm test --workspaces
+      - run: npm run build --workspaces
+      - name: The image's build manifests match the packages
+        run: python3 deploy/mcp/sync-manifests.py --check
+      # Everything above resolves the SDK from the root workspace; the image
+      # installs it from deploy/mcp. Re-run the wire contract against the tree
+      # the image actually installs, so the two cannot differ unseen.
+      - name: Install the image's dependency tree
+        working-directory: deploy/mcp
+        run: npm ci --ignore-scripts
+      - name: Wire contract against the SDK the image installs
+        run: npm run test:image --workspace @tokencanopy/agentdrive-mcp
+
+  design-system:
+    name: design system and stylesheet drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: design-system/.nvmrc
+      - run: npm ci
+        working-directory: design-system
+      - run: npm test
+        working-directory: design-system
+      - run: npm run build
+        working-directory: design-system
+      - name: The package ships every file its stylesheet references
+        run: npm run check:pack
+        working-directory: design-system
+      - name: Regenerate the served stylesheet and fail on drift
+        run: |
+          make css
+          git diff --exit-code src/agentdrive/static/agentdrive.css \
+            || { echo "::error::Run \`make css\` and commit the result."; exit 1; }
+
+  smoke:
+    name: self-host quickstart
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: The README quickstart, verbatim, then over HTTP
+        run: scripts/selfhost-smoke.sh --down

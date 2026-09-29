@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Wrong-origin viewer harness</title>
+<iframe id="private-viewer" src="http://viewer.localhost:8766/view/?browser-evil=1"></iframe>
+<script>
+  window.__postViewerMessage = (value) => {
+    document.querySelector("#private-viewer").contentWindow.postMessage(
+      value, "http://viewer.localhost:8766"
+    );
+  };
+</script>

@@ -1,0 +1,27 @@
+-- 0051 — drop folder sealing: additive-only grant inheritance.
+--
+-- Product decision (Josh, 2026-08-19): AgentDrive adopts Google Drive's
+-- model — if a principal can see a folder, they can see everything under it.
+-- `folders.grant_inheritance` was the only way to subtract reach on the way
+-- down, and it was the wrong shape for two reasons: it could be set (and the
+-- boundary it drew moved) with `editor`, while every other mutation of the
+-- access graph requires `manager`; and gating the field would not have closed
+-- the outcome anyway, because the same principal can already move, copy, or
+-- re-parent resources across the boundary. Restricting a subtree is now
+-- expressed by not granting the ancestor.
+--
+-- The resolver stopped reading this column in the same release (see
+-- `core/v0_authz.py`, `core/v0_search.py`, `core/v0_folders.py`), and the
+-- field left the wire contract (`FolderOut`, `FolderCreateIn`,
+-- `FolderUpdateIn`) with it.
+--
+-- DEPLOY ORDER. This is a contract-step DROP, not an expand-only change, so
+-- unlike a nullable-column addition it is NOT compatible with the previously
+-- deployed revision: the migration job runs before the traffic swap, and the
+-- old revision's folder SELECTs name this column. AgentDrive is private
+-- preview and pre-freeze ("break freely now, then freeze"), so the brief
+-- window in which the outgoing revision 500s on folder reads is accepted
+-- rather than split across two releases. Do not copy this shape for a GA
+-- surface — there, drop the readers in release N and the column in N+1.
+
+ALTER TABLE folders DROP COLUMN IF EXISTS grant_inheritance;

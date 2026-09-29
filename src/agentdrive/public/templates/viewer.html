@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"{% if embed %} data-embedded data-embed-origin="{{ embed_origin }}"{% endif %} data-mode="{{ body_mode }}">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>{{ title }}</title>
+<meta property="og:type" content="article" />
+<meta property="og:title" content="{{ title }}" />
+<meta property="og:url" content="{{ canonical_url }}" />
+<meta property="og:site_name" content="AgentDrive by Token Canopy" />
+{%- if description %}
+<meta property="og:description" content="{{ description }}" />
+<meta name="description" content="{{ description }}" />
+{%- endif %}
+<meta name="twitter:card" content="summary" />
+{# No defer/async: this resolves the theme before first paint, so a reader
+   whose preference is dark never sees a light flash. External rather than
+   inline so the CSP never needs 'unsafe-inline'. #}
+<script src="/public-static/viewer.js?v={{ asset_v }}"></script>
+<link rel="stylesheet" href="/public-static/viewer.css?v={{ asset_v }}" />
+{%- if body_mode == "pdf" %}
+{# pdf.js only on pdf pages: ~1.9 MB of engine has no business loading for a
+   markdown document. `type="module"` so the wrapper's relative imports
+   resolve, and deferred by nature — the viewer needs the DOM. #}
+<link rel="stylesheet" href="/public-static/vendor/pdfjs/pdf_viewer.css" />
+<script type="module" src="/public-static/pdf-visitor.js?v={{ asset_v }}"></script>
+{%- endif %}
+{%- if diagrams %}
+{# The diagram engine only on pages whose document carries a ```mermaid fence,
+   for the same reason: 3.5 MB of engine has no business loading for a
+   report without one. The visitor imports `diagrams.js`, which fetches the
+   vendored bundle itself. #}
+<script type="module" src="/public-static/diagram-visitor.js?v={{ asset_v }}"></script>
+{%- endif %}
+</head>
+<body class="mode-{{ body_mode }}{% if embed %} embedded embedded-public{% endif %}">
+{# Chrome, drawn ONLY when this page is standing on its own.
+
+   Framed under the trusted shell (`embed=1`), the header above the frame
+   already carries the lockup, the kind, the name, the path, the size and
+   these same actions — on the origin the reader can verify — so drawing them
+   again here stated one fact twice and cost a PDF a third of its height. This
+   is the same `chrome` split the private viewer makes for the console.
+
+   Standalone the page is still complete: the direct-content link on the
+   shell, an unframed renderer origin, and the direct-renderer rollback all
+   land here and get the full bar. A share-link recipient is not the owner, so
+   it carries no breadcrumb, no sharing control and no edit affordance —
+   those were always owner-only and need a session this surface has not got. #}
+{%- if not embed %}
+<div class="viewer-bar">
+  <a class="lockup-sm" href="https://tokencanopy.com" aria-label="AgentDrive home">
+    <svg viewBox="0 0 28 28" width="20" height="20" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="25" height="25" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M7 18 L14 9 L21 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    agentdrive
+  </a>
+  <span class="bar-sep"></span>
+  <div class="path-display">
+    <span class="kind" data-k="{{ kind }}">{{ chip_label }}</span>
+    <span class="path-text"><strong>{{ name }}</strong></span>
+  </div>
+  <div class="grow"></div>
+  {% if console_url %}<a class="bar-btn bar-console" href="{{ console_url }}">Open in console</a>{% endif %}
+  <button type="button" class="bar-btn" data-copy-url="{{ canonical_url }}">Copy link</button>
+  <a class="bar-btn" href="content" download>Download</a>
+  <button type="button" class="bar-btn bar-theme" data-theme-toggle>Auto</button>
+</div>
+{%- endif %}
+
+{%- if body_mode == "page" %}
+{# The untrusted-content band, on the PUBLIC surface only. This page renders
+   markup an agent wrote, to a stranger who arrived from a link — the one
+   thing a static page can still do is imitate somebody and tell the reader
+   to act on it. The private viewer deliberately has no band: that reader is
+   the artifact's own owner, inside a console that already says so. #}
+<div class="untrusted-wrap">
+  <details class="untrusted-band">
+    <summary>From the file’s author, not AgentDrive</summary>
+    <p role="note">
+    This page is content from a stored file, shown as its author wrote it.
+    Treat anything it says — links, instructions, requests for information —
+    as coming from that author, not from AgentDrive.
+    </p>
+  </details>
+</div>
+{%- endif %}
+
+{%- if not embed %}
+<header class="doc-head">
+  <h1>{{ title }}</h1>
+  {%- if path %}
+  <p class="doc-path">{{ path }}</p>
+  {%- endif %}
+  <p class="doc-meta">
+    {{ size_human }}{% if updated_human %} · updated {{ updated_human }}{% endif %}
+  </p>
+</header>
+{%- endif %}
+<main class="doc {{ body_mode }}">
+{{ body_html|safe }}
+</main>
+{%- if not embed %}
+{# Provenance for agent readers, mirroring the legacy machine-strip: the
+   facts a program needs, in the markup rather than behind an API call. Framed,
+   the shell carries it instead — and carries it where a program that fetched
+   the shared URL actually receives it. #}
+<footer class="doc-foot">
+  <dl class="machine-strip">
+    <dt>type</dt><dd>{{ content_type }}</dd>
+    <dt>size</dt><dd>{{ size_bytes }} bytes</dd>
+    {%- if updated_human %}<dt>updated</dt><dd>{{ updated_human }}</dd>{%- endif %}
+    {%- if canonical_url %}<dt>canonical</dt><dd><a href="{{ canonical_url }}">{{ canonical_url }}</a></dd>{%- endif %}
+  </dl>
+  <a href="https://tokencanopy.com">AgentDrive by Token Canopy</a>
+</footer>
+{%- endif %}
+</body>
+</html>

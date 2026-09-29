@@ -1,0 +1,43 @@
+# Local configuration — .env.example is the committed template.
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+dist/
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Node (the root workspace, mcp/*, design-system/)
+node_modules/
+
+# Local override for the developer compose file
+docker-compose.override.yml
+
+# Key material never belongs in the tree
+*.key
+*.pem
+
+# A local filesystem object store (STORAGE_BACKEND=fs); see .env.example.
+var/
+
+# TLA+ harness scratch (specs/tla/run.sh): pinned-jar cache + TLC state dirs.
+specs/tla/.cache/
+specs/tla/states/
+specs/tla/*.old
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+.worktrees/

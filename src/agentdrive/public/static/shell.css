@@ -1,0 +1,369 @@
+/* Trusted permalink shell. Artifact-authored markup lives only in the
+   isolated public-content iframe; this stylesheet owns the branded chrome —
+   which, since the frame stopped drawing a header of its own, is the ONLY
+   chrome on the page.
+
+   The palette is deliberately the same values `viewer.css` resolves to, light
+   and dark. The two documents meet at a seam with no border across it, so a
+   background that disagreed by two hex digits would draw that seam back. */
+:root {
+  color-scheme: light dark;
+  --bg: #faf8f5;
+  --bg-panel: #ffffff;
+  --fg: #1a1a17;
+  --fg-muted: #5c5c54;
+  --border: #e4e0d8;
+  --accent: #c17d2b;
+  --accent-strong: #8a5214;
+  --canopy: #2b4033;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --f-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Dark, stated twice for the same reason `viewer.css` states it twice: the
+   attribute is the authority (the script resolves a stored preference before
+   first paint), and the media query is the no-script fallback that cannot
+   express "the reader chose". Keep the two in sync — and keep them equal to
+   the frame's, or a themed document sits in a shell of the other colour. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #17171a;
+  --bg-panel: #1f1f23;
+  --fg: #ececea;
+  --fg-muted: #a3a39d;
+  --border: #33333a;
+  --canopy: #6fbf94;
+  --accent-strong: #d9a05c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #17171a;
+    --bg-panel: #1f1f23;
+    --fg: #ececea;
+    --fg-muted: #a3a39d;
+    --border: #33333a;
+    --canopy: #6fbf94;
+    --accent-strong: #d9a05c;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.5 var(--f-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent-strong);
+  text-underline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible {
+  border-radius: var(--r-sm);
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* The document owns scrolling while the shell keeps its controls visible.
+
+   `minmax(0, 1fr)` on the column, not the default `auto`: an auto column is
+   floored at its widest item's min-content, and the bar's is the wordmark plus
+   an un-ellipsised filename plus four nowrap buttons. The column grew to that
+   floor and took the page with it — so the bar had positive free space, its
+   metadata never shrank, its ellipsis never engaged, and the page scrolled
+   sideways with the actions off the right edge. Nothing inside the bar could
+   fix that; the shrinking has to be allowed here first. */
+.shell-page {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Sticky, because it is now the only chrome: once the page is in flow layout
+   a long document would otherwise scroll the brand, the filename and the
+   download away and leave the reader in an unlabelled wall of text. */
+.shell-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  padding: 4px 20px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.shell-lockup {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--canopy);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.shell-lockup svg {
+  flex: none;
+}
+
+.shell-sep {
+  flex: none;
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+}
+
+.shell-metadata {
+  min-width: 0;
+}
+
+.shell-metadata h1,
+.shell-metadata p {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-metadata h1 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.shell-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The provenance line: path, media type, size, date. It replaced a four-row
+   strip under the document, so it is allowed to be the widest thing in the
+   bar — and to ellipsise rather than wrap, because a header that changes
+   height with the length of a filename makes the document below it jump. */
+.shell-metadata p {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.shell-metadata p:empty {
+  display: none;
+}
+
+/* Same chip the document surface draws, same values: a reader who sees `json`
+   here and opens the folder listing should be looking at one vocabulary. */
+.shell-kind {
+  flex: none;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--fg-muted);
+  font: 11px var(--f-mono);
+  font-weight: 400;
+}
+
+.shell-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.shell-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.shell-btn:hover {
+  border-color: var(--canopy);
+  color: var(--canopy);
+}
+
+/* `[hidden]` only sets display:none in the UA sheet, so the author `display`
+   above outranks it — exactly the trap `viewer.css` documents for `.pdf-find`.
+   Without this the copy and theme controls, which ship hidden precisely
+   because script has to reveal them, rendered dead for a reader with no
+   script — and took a phone header's width with them. */
+.shell-btn[hidden] {
+  display: none;
+}
+
+.shell-theme {
+  flex: none;
+  min-width: 4.2rem;
+  justify-content: center;
+}
+
+/* No padding and no border: the frame's document is the page's content, and a
+   card drawn around it would be the second frame this change exists to
+   remove. The seam is invisible because both sides resolve the same --bg. */
+.shell-content {
+  min-height: 12rem;
+}
+
+.shell-content iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: var(--bg);
+}
+
+/* One line, and only because a frame that failed to load needs a way out.
+   Everything else that used to live down here is in the header. */
+.shell-foot {
+  padding: 0 20px;
+  border-top: 1px solid var(--border);
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.shell-fallback {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 0 0.3em;
+  margin: 0;
+  font-size: 13px;
+}
+
+/* 44px, like the lockup: a recovery link a reader reaches for on a phone
+   because the preview did not load is the last thing that should be hard to
+   hit. */
+.shell-fallback a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.shell-page-notfound {
+  display: grid;
+  place-items: center;
+}
+
+.shell-notfound {
+  max-width: 32rem;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.shell-notfound h1 {
+  margin: 0 0 8px;
+}
+
+.shell-notfound p {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+/* The endorsement half of the wordmark is the first thing to go. On a narrow
+   laptop or a tablet the one-row bar is `AgentDrive by Token Canopy` (255px),
+   a separator, the name, and four nowrap buttons — and the name is the flex
+   item that shrinks, so it was ellipsised down to nothing while a brand the
+   reader can also see in the address bar kept its full width. */
+@media (max-width: 64rem) {
+  .shell-lockup-by {
+    display: none;
+  }
+}
+
+/* Below this width the bar becomes three rows: identity and the theme control
+   on top, the name and its metadata under, the document actions last.
+
+   It used to be two, with every action sharing row one — but `Open in console`,
+   `Copy link`, `Download` and `Auto` are all `white-space: nowrap`, so on a
+   phone they measured wider than the viewport. The row could not shrink, so the
+   grid overflowed: `Auto` was cut off past the right edge, and because the
+   actions are right-aligned the overflow went LEFT as well and painted `Open in
+   console` straight over the wordmark. (The wordmark had already collapsed to
+   its 44px touch minimum: a specified `min-width` becomes the auto track's
+   floor, so the `auto` column was free to shrink below the text it holds.)
+
+   Giving the actions the full width of a row of their own is what fixes it —
+   the three that describe the document fit one line on any phone, and wrap
+   rather than overflow if they ever do not. */
+@media (max-width: 48rem) {
+  .shell-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 6px 14px 10px;
+  }
+
+  .shell-sep {
+    display: none;
+  }
+
+  /* Explicit placement, not auto-flow: two of these items span both columns,
+     and source order alone would deal them onto rows of their own in the wrong
+     order. */
+  .shell-lockup {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .shell-theme {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .shell-metadata {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  .shell-actions {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  /* 44px, like the lockup and the fallback link. On a pointer device these are
+     a comfortable 31px; a thumb is not a pointer. */
+  .shell-btn {
+    min-height: 44px;
+  }
+
+  .shell-foot {
+    padding: 0 14px;
+  }
+}

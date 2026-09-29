@@ -1,0 +1,10 @@
+{
+  "name": "agentdrive-workspace",
+  "private": true,
+  "description": "Development workspace for AgentDrive's TypeScript packages: the MCP transport and its auth boundary. The container image builds them from deploy/mcp/ instead.",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "mcp/auth",
+    "mcp/server"
+  ]
+}
