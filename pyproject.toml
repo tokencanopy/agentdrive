@@ -5,7 +5,7 @@ description = "A collaboration workspace for your agents — v0 (beta)"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
-    "uvicorn[standard]>=0.32",
+    "uvicorn[standard]>=0.54.0",
     "asyncpg>=0.30",
     "google-cloud-storage>=2.18",
     "pydantic-settings>=2.5",
