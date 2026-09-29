@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "eslint": "^9.39.5",
+    "eslint": "^10.11.0",
     "jose": "^6.2.3",
     "prettier": "^3.9.5",
     "typescript": "^6.0.3",
