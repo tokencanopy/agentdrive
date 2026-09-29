@@ -1,0 +1,16 @@
+{
+  "name": "@tokencanopy/agentdrive-mcp-image",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Build workspace for the AgentDrive hosted MCP sidecar",
+  "workspaces": [
+    "auth",
+    "server"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @tokencanopy/mcp-auth && npm run build --workspace @tokencanopy/agentdrive-mcp"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "openapi": "3.1.0",
+  "x-agentdrive-compatibility-policy": 2,
+  "paths": {
+    "/stable/widgets": {
+      "post": {
+        "operationId": "createWidget",
+        "tags": ["widgets"],
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/WidgetIn"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/WidgetOut"}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "AgentDrive API key or JWT"
+      }
+    },
+    "schemas": {
+      "WidgetIn": {
+        "type": "object",
+        "properties": {"name": {"type": "string"}},
+        "required": ["name"]
+      },
+      "WidgetOut": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  }
+}

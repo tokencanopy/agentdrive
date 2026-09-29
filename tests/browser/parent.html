@@ -1,0 +1,58 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Private viewer harness</title>
+<iframe id="private-viewer" src="http://viewer.localhost:8766/view/"></iframe>
+<iframe id="attacker" src="http://app.localhost:8765/attacker.html"></iframe>
+<script>
+  (() => {
+    "use strict";
+    const viewerOrigin = "http://viewer.localhost:8766";
+    const frame = document.getElementById("private-viewer");
+    let credential = null;
+    let expected = null;
+    let chrome = null;
+    let ready = false;
+    let sent = false;
+    window.__viewerEvents = [];
+
+    function sendOnce() {
+      if (!ready || sent || !credential) return;
+      // `protocol` is part of the message contract in BOTH directions — the
+      // inbound guard below already requires it — and the real console has
+      // always sent it. The shell now requires it too, so this stand-in has to
+      // send what it stands in for.
+      // `chrome` is omitted unless a test asks for it, which is what the
+      // real console does when it wants the shell's own header drawn.
+      const message = { type: "agentdrive.viewer.credential", protocol: 1, credential, expected };
+      if (chrome) message.chrome = chrome;
+      frame.contentWindow.postMessage(message, viewerOrigin);
+      credential = null;
+      expected = null;
+      chrome = null;
+      sent = true;
+    }
+
+    window.__setViewerCredential = (value) => {
+      credential = value.credential;
+      expected = value.expected;
+      chrome = value.chrome || null;
+      sendOnce();
+    };
+
+    // Test-only direct path: reaches the shell after its normal one-shot
+    // handoff, so mutation tests cannot be stopped by this parent helper.
+    window.__postViewerMessage = (value) => {
+      frame.contentWindow.postMessage(value, viewerOrigin);
+    };
+
+    window.addEventListener("message", (event) => {
+      if (event.source !== frame.contentWindow || event.origin !== viewerOrigin) return;
+      if (!event.data || event.data.protocol !== 1) return;
+      window.__viewerEvents.push(event.data);
+      if (event.data.type === "agentdrive.viewer.ready") {
+        ready = true;
+        sendOnce();
+      }
+    });
+  })();
+</script>

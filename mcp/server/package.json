@@ -1,0 +1,54 @@
+{
+  "name": "@tokencanopy/agentdrive-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hosted AgentDrive MCP server for Token Canopy",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "agentdrive-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prebuild": "npm run build --workspace @tokencanopy/mcp-auth",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "pretypecheck": "npm run build --workspace @tokencanopy/mcp-auth",
+    "test": "vitest run",
+    "pretest": "npm run build --workspace @tokencanopy/mcp-auth",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:image": "vitest run --config vitest.image.config.ts"
+  },
+  "dependencies": {
+    "@tokencanopy/agentdrive-sdk": "0.0.4",
+    "@tokencanopy/mcp-auth": "0.1.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "eslint": "^9.39.5",
+    "jose": "^6.2.3",
+    "prettier": "^3.9.5",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0"
+}

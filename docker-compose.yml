@@ -1,0 +1,46 @@
+services:
+  postgres:
+    # pgvector/pgvector ships the `vector` extension on top of postgres:16.
+    # PR 2 (embed pipeline) introduces vector(1536) columns; the plain
+    # postgres:16 image would fail `CREATE EXTENSION IF NOT EXISTS vector`
+    # in schema.sql at startup. Cloud SQL needs the
+    # `cloudsql.enable_pgvector` flag flipped at the instance level
+    # (one-time `gcloud sql instances patch`).
+    image: pgvector/pgvector:pg16
+    # Durability off for LOCAL DEV ONLY (prod is Cloud SQL): the test
+    # suite TRUNCATEs + reseeds per test, so it is fsync-bound on
+    # Docker-for-Mac. Worst case on host crash is losing local dev
+    # data, which is disposable. Roughly halves the pytest wall clock.
+    command: postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off
+    environment:
+      POSTGRES_USER: agentdrive
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: agentdrive
+    ports: ["5432:5432"]
+    volumes:
+      # NO schema init-script mount. `apply_schema` is the SINGLE schema
+      # authority — it must see an empty DB so it takes the fresh-baseline
+      # path (apply schema.sql once, mark every migration embodied). A
+      # docker-entrypoint init-script that pre-applied schema.sql made the
+      # DB non-fresh, so apply_schema replayed historical migrations against
+      # a baseline that had already folded their effects in — e.g. 0008
+      # UPDATE-ing the `visibility` column that current schema.sql no longer
+      # creates (UndefinedColumnError). Every consumer (scripts/dev.sh,
+      # feedback-fix-verify-setup.sh) runs apply_schema after `compose up`.
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentdrive -d agentdrive"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  gcs:
+    image: fsouza/fake-gcs-server:latest
+    command: -scheme http -port 4443 -public-host localhost:4443
+    ports: ["4443:4443"]
+    volumes:
+      - gcsdata:/storage
+
+volumes:
+  pgdata:
+  gcsdata:

@@ -1,0 +1,983 @@
+{
+  "schema_version": 5,
+  "status": "accepted-prelaunch-reset",
+  "api_version": "v0",
+  "openapi_server": "https://drive.tokencanopy.com",
+  "description": "AgentDrive v0 operation catalog: 59 operations total (schema_version 5). SHEET_SESSIONS_ENABLED=false removes the eight feature=sheet_sessions entries from the active production inventory, leaving 51; staging enables all 59. Every active operation carries x-stability-level: beta. scopes is the product-scope map; precondition_class describes the broad read/creation/mutation family; if_match_class is the closed explicit If-Match contract (required | optional | conditional | forbidden); idempotency_class is the closed explicit Idempotency-Key contract (required | not_required | forbidden); expected_statuses is the success status set; shape_fixture names the response-shape family. The handler-generated OpenAPI snapshot is authoritative; this manifest pins its /v0 surface.",
+  "operations": [
+    {
+      "domain": "drives",
+      "method": "GET",
+      "path": "/v0/drives",
+      "operation_id": "drives_list",
+      "scopes": [
+        "drives:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "drive-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "drives",
+      "method": "POST",
+      "path": "/v0/drives",
+      "operation_id": "drives_create",
+      "scopes": [
+        "drives:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "drive",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "drives",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}",
+      "operation_id": "drives_read",
+      "scopes": [
+        "drives:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "drive",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "drives",
+      "method": "PATCH",
+      "path": "/v0/drives/{drive_id}",
+      "operation_id": "drives_update",
+      "scopes": [
+        "drives:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "drive",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "drives",
+      "method": "DELETE",
+      "path": "/v0/drives/{drive_id}",
+      "operation_id": "drives_delete",
+      "scopes": [
+        "drives:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "drive",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "drives",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/restore",
+      "operation_id": "drives_restore",
+      "scopes": [
+        "drives:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "deleted-drive",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "drives",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/usage",
+      "operation_id": "drives_usage",
+      "scopes": [
+        "usage:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "drive-usage",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "navigation",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/entries",
+      "operation_id": "entries_list",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "entry-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "navigation",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/lookup",
+      "operation_id": "lookup",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "lookup",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "folders",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/folders",
+      "operation_id": "folders_list",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "folder-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "folders",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/folders",
+      "operation_id": "folders_create",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "folder",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "folders",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/folders/{folder_id}",
+      "operation_id": "folders_read",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "folder",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "folders",
+      "method": "PATCH",
+      "path": "/v0/drives/{drive_id}/folders/{folder_id}",
+      "operation_id": "folders_update",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "folder",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "folders",
+      "method": "DELETE",
+      "path": "/v0/drives/{drive_id}/folders/{folder_id}",
+      "operation_id": "folders_delete",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "folder",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "folders",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/folders/{folder_id}/copy",
+      "operation_id": "folders_copy",
+      "scopes": [
+        "content:read",
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "folder-copy",
+      "idempotency_class": "required",
+      "if_match_class": "optional"
+    },
+    {
+      "domain": "folders",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/folders/{folder_id}/restore",
+      "operation_id": "folders_restore",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "deleted-folder",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "artifacts",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts",
+      "operation_id": "artifacts_list",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "artifact-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "artifacts",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts",
+      "operation_id": "artifacts_create",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "artifact",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "artifacts",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}",
+      "operation_id": "artifacts_read",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "artifact",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "artifacts",
+      "method": "PATCH",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}",
+      "operation_id": "artifacts_update",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "artifact",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "artifacts",
+      "method": "DELETE",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}",
+      "operation_id": "artifacts_delete",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "artifact",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "artifacts",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/content",
+      "operation_id": "artifacts_content",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304,
+        307
+      ],
+      "shape_fixture": "artifact-content",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "artifacts",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/copy",
+      "operation_id": "artifacts_copy",
+      "scopes": [
+        "content:read",
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "artifact-copy",
+      "idempotency_class": "required",
+      "if_match_class": "optional"
+    },
+    {
+      "domain": "artifacts",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/restore",
+      "operation_id": "artifacts_restore",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "deleted-artifact",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "versions",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/versions",
+      "operation_id": "versions_list",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "version-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "versions",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/versions",
+      "operation_id": "versions_append",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "version",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "versions",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/versions/{version_id}",
+      "operation_id": "versions_read",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "version",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "versions",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/versions/{version_id}/content",
+      "operation_id": "versions_content",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304,
+        307
+      ],
+      "shape_fixture": "version-content",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "versions",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/versions/{version_id}/restore",
+      "operation_id": "versions_restore",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "version-restore",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "search",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/search",
+      "operation_id": "drive_search",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "search-results",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "changes",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/changes",
+      "operation_id": "changes_list",
+      "scopes": [
+        "changes:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "change-page",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "grants",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/grants",
+      "operation_id": "grants_list",
+      "scopes": [
+        "sharing:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "grant-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "grants",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/grants",
+      "operation_id": "grants_create",
+      "scopes": [
+        "sharing:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "grant",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "grants",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/grants/{grant_id}",
+      "operation_id": "grants_read",
+      "scopes": [
+        "sharing:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "grant",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "grants",
+      "method": "PATCH",
+      "path": "/v0/drives/{drive_id}/grants/{grant_id}",
+      "operation_id": "grants_update",
+      "scopes": [
+        "sharing:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "grant",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "grants",
+      "method": "DELETE",
+      "path": "/v0/drives/{drive_id}/grants/{grant_id}",
+      "operation_id": "grants_revoke",
+      "scopes": [
+        "sharing:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "grant",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "shares",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/shares",
+      "operation_id": "shares_list",
+      "scopes": [
+        "sharing:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "share-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "shares",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/shares",
+      "operation_id": "shares_create",
+      "scopes": [
+        "sharing:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201
+      ],
+      "shape_fixture": "share",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "shares",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/shares/{share_id}",
+      "operation_id": "shares_read",
+      "scopes": [
+        "sharing:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "share",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "shares",
+      "method": "DELETE",
+      "path": "/v0/drives/{drive_id}/shares/{share_id}",
+      "operation_id": "shares_revoke",
+      "scopes": [
+        "sharing:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "share",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "shares",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/shares/{share_id}/rotate",
+      "operation_id": "shares_rotate",
+      "scopes": [
+        "sharing:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "share",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "viewer-sessions",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/viewer-sessions",
+      "operation_id": "viewer_sessions_create",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "viewer-session-create",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "uploads",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/uploads",
+      "operation_id": "uploads_create",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "idempotency_class": "required",
+      "expected_statuses": [
+        201,
+        200
+      ],
+      "shape_fixture": "upload-session",
+      "if_match_class": "conditional"
+    },
+    {
+      "domain": "uploads",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/uploads/{upload_id}",
+      "operation_id": "uploads_read",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "read",
+      "idempotency_class": "not_required",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "upload-session",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "uploads",
+      "method": "DELETE",
+      "path": "/v0/drives/{drive_id}/uploads/{upload_id}",
+      "operation_id": "uploads_delete",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "idempotency_class": "required",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "upload-session",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "uploads",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/uploads/{upload_id}/complete",
+      "operation_id": "uploads_complete",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "idempotency_class": "required",
+      "expected_statuses": [
+        201,
+        200
+      ],
+      "shape_fixture": "upload-session",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "downloads",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/download-capabilities",
+      "operation_id": "download_capabilities_create",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "creation-flavored",
+      "idempotency_class": "forbidden",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "download-capability-create",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheets",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheets",
+      "operation_id": "sheets_list",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "sheet-index",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheets",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/cells",
+      "operation_id": "sheet_cells_read",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "cell-range",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions",
+      "operation_id": "sheet_sessions_create",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        200,
+        201
+      ],
+      "shape_fixture": "sheet-session",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions",
+      "operation_id": "sheet_sessions_list",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "sheet-session-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions/{session_id}",
+      "operation_id": "sheet_sessions_read",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "sheet-session",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "DELETE",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions/{session_id}",
+      "operation_id": "sheet_sessions_delete",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "mutation-of-existing",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "sheet-session",
+      "idempotency_class": "required",
+      "if_match_class": "required"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions/{session_id}/cells",
+      "operation_id": "sheet_sessions_write_cells",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "sheet-session-write",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions/{session_id}/cells",
+      "operation_id": "sheet_sessions_read_cells",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "cell-range",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions/{session_id}/edits",
+      "operation_id": "sheet_sessions_list_edits",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200
+      ],
+      "shape_fixture": "sheet-edit-list",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheet-sessions",
+      "method": "POST",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/sheet-sessions/{session_id}/complete",
+      "operation_id": "sheet_sessions_complete",
+      "feature": "sheet_sessions",
+      "scopes": [
+        "content:write"
+      ],
+      "precondition_class": "creation-flavored",
+      "expected_statuses": [
+        201,
+        200
+      ],
+      "shape_fixture": "sheet-session",
+      "idempotency_class": "required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheets",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/versions/{version_id}/sheets",
+      "operation_id": "version_sheets_list",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "sheet-index",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    },
+    {
+      "domain": "sheets",
+      "method": "GET",
+      "path": "/v0/drives/{drive_id}/artifacts/{artifact_id}/versions/{version_id}/cells",
+      "operation_id": "version_cells_read",
+      "scopes": [
+        "content:read"
+      ],
+      "precondition_class": "read",
+      "expected_statuses": [
+        200,
+        304
+      ],
+      "shape_fixture": "cell-range",
+      "idempotency_class": "not_required",
+      "if_match_class": "forbidden"
+    }
+  ]
+}

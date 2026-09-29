@@ -1,0 +1,98 @@
+<!doctype html>
+{# The article HTML is produced from docs/agentdriveSDK.md by rendering.render,
+   whose MarkdownIt configuration disables raw HTML. Keep this template as
+   presentation-only so the Markdown remains the sole editable design source.
+   Standalone document (no base template survives on the v0 surface); theme
+   follows prefers-color-scheme via the stylesheet's :root fallback. #}
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Python SDK design · AgentDrive</title>
+<meta name="description" content="The canonical architecture record for the AgentDrive Python SDK rebuild." />
+<meta name="robots" content="noindex,nofollow" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="AgentDrive Python SDK design" />
+<meta property="og:description" content="The canonical architecture record for the AgentDrive Python SDK rebuild." />
+<meta property="og:url" content="{{ canonical_url }}" />
+<meta property="og:site_name" content="AgentDrive by Token Canopy" />
+<link rel="canonical" href="{{ canonical_url }}" />
+<link rel="stylesheet" href="{{ u('/static/agentdrive.css') }}" />
+<link rel="icon" href="{{ u('/static/favicon.svg') }}" type="image/svg+xml" />
+</head>
+<body>
+<a href="#main" class="sr-only sr-only-focusable">Skip to content</a>
+
+<header class="mhead sdk-head">
+  <div class="mhead-inner">
+    <a class="lockup" href="{{ u('/sdk/python') }}" aria-label="AgentDrive Python SDK design">
+      <svg viewBox="0 0 28 28" width="22" height="22" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="25" height="25" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M7 18 L14 9 L21 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      agentdrive<span class="bytc">by Token Canopy</span>
+    </a>
+    <nav aria-label="SDK design navigation">
+      <a href="{{ u('/sdk/python') }}" aria-current="page">SDK design</a>
+    </nav>
+    <div class="mhead-cta">
+      <a class="btn btn-secondary btn-sm" href="{{ u('/docs') }}">REST reference</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="sdk-page">
+  <div class="sdk-docs">
+    <article class="sdk-main viewer-article">
+      {{ design_html|safe }}
+    </article>
+
+    <aside class="sdk-side" aria-label="Document source and related links">
+      <section class="sdk-project-meta card card-pad" aria-labelledby="sdk-source-title">
+        <h2 id="sdk-source-title">Canonical source</h2>
+        <p>
+          Rendered directly from <code>docs/agentdriveSDK.md</code>. Edit that
+          Markdown file; this template owns presentation only.
+        </p>
+        <h3>Related links</h3>
+        <a href="{{ u('/docs') }}">REST API reference</a>
+        <a href="{{ u('/openapi.json') }}">OpenAPI document</a>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<footer class="m-foot sdk-footer">
+  <div class="m-foot-inner">
+    <div>
+      <a class="lockup sdk-footer-lockup" href="{{ u('/sdk/python') }}">
+        <svg viewBox="0 0 28 28" width="22" height="22" aria-hidden="true">
+          <rect x="1.5" y="1.5" width="25" height="25" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 18 L14 9 L21 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        agentdrive<span class="bytc">by Token Canopy</span>
+      </a>
+      <p class="pitch">Artifact handoff infrastructure for agents that communicate and create.</p>
+    </div>
+    <div>
+      <h4>Reference</h4>
+      <a href="{{ u('/docs') }}">REST API</a>
+      <a href="{{ u('/openapi.json') }}">OpenAPI JSON</a>
+    </div>
+    <div>
+      <h4>SDK</h4>
+      <a href="{{ u('/sdk/python') }}">Architecture record</a>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <a href="https://tokencanopy.com" target="_blank" rel="noopener">Token Canopy ↗</a>
+    </div>
+  </div>
+  <div class="m-foot-bottom">
+    <span>© 2026 AgentDrive by Token Canopy</span>
+    <span>Python SDK · architecture record</span>
+  </div>
+</footer>
+</body>
+</html>

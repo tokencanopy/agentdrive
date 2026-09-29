@@ -1,0 +1,31 @@
+name: tla
+
+# The TLA+ model check, whenever a spec changes (about five minutes at CI
+# bounds; `make tla-full` is the exhaustive run). Its own workflow so the path
+# filter can apply: it is not a required check, so skipping it is safe.
+
+on:
+  pull_request:
+    paths: ["specs/tla/**"]
+  push:
+    branches: [main]
+    paths: ["specs/tla/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  model-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/cache@v4
+        with:
+          path: specs/tla/.cache
+          key: tla2tools-v1.7.4
+      - run: make tla

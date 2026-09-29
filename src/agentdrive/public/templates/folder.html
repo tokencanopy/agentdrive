@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"{% if embed %} data-embedded data-embed-origin="{{ embed_origin }}"{% endif %} data-mode="listing">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{{ name }}</title>
+<meta property="og:type" content="website" />
+<meta property="og:title" content="{{ name }}" />
+<meta property="og:url" content="{{ canonical_url }}" />
+<meta property="og:site_name" content="AgentDrive by Token Canopy" />
+{%- if description %}
+<meta property="og:description" content="{{ description }}" />
+<meta name="description" content="{{ description }}" />
+{%- endif %}
+<meta name="twitter:card" content="summary" />
+<script src="/public-static/viewer.js?v={{ asset_v }}"></script>
+<link rel="stylesheet" href="/public-static/viewer.css?v={{ asset_v }}" />
+</head>
+<body class="mode-listing{% if embed %} embedded embedded-public{% endif %}">
+{# Chrome only when standalone — framed, the trusted shell above states the
+   name, the path and the item count already. Same split as `viewer.html`. #}
+{%- if not embed %}
+<header class="doc-head">
+  <span class="kind" data-k="folder">folder</span>
+  <h1>{{ name }}</h1>
+  {%- if path %}
+  <p class="doc-path">{{ path }}</p>
+  {%- endif %}
+  <p class="doc-meta">{{ count }} item{{ '' if count == 1 else 's' }}</p>
+</header>
+{%- endif %}
+<main class="doc listing">
+{%- if entries %}
+  <table>
+    <tbody>
+    {%- for e in entries %}
+      <tr>
+        <td class="cell-kind"><span class="kind" data-k="{{ e.kind }}">{{ e.chip or e.kind }}</span></td>
+        {#- Framed, a child link has to leave the frame: navigating it in place
+            would load the child under a shell header still describing the
+            folder, on an origin the address bar does not show. `entry_base` is
+            the share host and `_top` is the whole window, so a click lands on
+            the child's own branded permalink — the URL a reader would want to
+            copy anyway. Standalone, the relative link is already right. #}
+        <td class="cell-name"><a href="{{ entry_base }}{{ '/f/' if e.is_folder else '/a/' }}{{ e.id }}/"{% if embed %} target="_top"{% endif %}>{{ e.name }}</a></td>
+        <td class="cell-size">{% if not e.is_folder %}{{ e.size_bytes|human_size }}{% endif %}</td>
+      </tr>
+    {%- endfor %}
+    </tbody>
+  </table>
+  {%- if truncated %}
+  <p class="listing-note">Only the first {{ count }} items are shown.</p>
+  {%- endif %}
+{%- else %}
+  <p class="listing-note">Nothing here.</p>
+{%- endif %}
+</main>
+{%- if not embed %}
+<footer class="doc-foot">
+  <a href="https://tokencanopy.com">AgentDrive by Token Canopy</a>
+</footer>
+{%- endif %}
+</body>
+</html>

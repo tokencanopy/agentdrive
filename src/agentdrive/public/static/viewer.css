@@ -1,0 +1,804 @@
+/* Public viewer. Token values mirror @tokencanopy/design-system; this file
+   is deliberately small - a rendered document is not an app.
+
+   No inline style or script tags anywhere in the public shell: these pages
+   ship under `default-src 'none'; style-src 'self'`, so ALL styling has to
+   arrive through this one linked file. It is also fully self-contained - no
+   @font-face URL, no CDN, no remote image - because the CSP forbids those
+   origins and the page must render offline. */
+:root {
+  --bg: #faf8f5; --bg-panel: #fff; --fg: #1a1a17; --fg-muted: #5c5c54;
+  --border: #e4e0d8; --canopy: #2f6b4f; --r-md: 6px;
+  --f-ui: Inter, system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+/* Dark, stated twice, and the duplication is load-bearing.
+
+   `[data-theme]` is the AUTHORITY. Both surfaces resolve a theme and stamp it
+   on <html> before anything is visible: the public page from localStorage in a
+   render-blocking script, the embedded shell from the console that frames it.
+   Following the OS inside the embed would be exactly wrong — the reader
+   already chose a theme in the console, and a document rendering dark inside a
+   light console reads as a bug in the console.
+
+   The media query is the no-script fallback and only that. It cannot express
+   "the console said dark", and the attribute rule cannot express "no script
+   ran", so neither block subsumes the other. Keep them in sync. */
+:root[data-theme="dark"] {
+  --bg: #17171a; --bg-panel: #1f1f23; --fg: #ececea;
+  --fg-muted: #a3a39d; --border: #33333a;
+  /* The light-mode canopy green is 2.9:1 on this background — below the
+     4.5:1 AA floor for body text. This lifted tint is 8.3:1. */
+  --canopy: #6fbf94;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17171a; --bg-panel: #1f1f23; --fg: #ececea;
+    --fg-muted: #a3a39d; --border: #33333a;
+    --canopy: #6fbf94;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.65 var(--f-ui);
+}
+.doc-head, .doc, .doc-foot, .untrusted-wrap { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem; }
+.doc-head { padding-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+.doc-head h1 { margin: 0.4rem 0 0.25rem; font-size: 1.6rem; line-height: 1.25; }
+.doc-path { margin: 0 0 0.15rem; color: var(--fg-muted); font: 12px var(--f-mono); word-break: break-all; }
+.doc-meta { margin: 0; color: var(--fg-muted); font-size: 13px; }
+.kind {
+  display: inline-block; padding: 2px 7px; border-radius: var(--r-md);
+  border: 1px solid var(--border); font: 11px var(--f-mono); color: var(--fg-muted);
+}
+.doc { padding-top: 1.75rem; padding-bottom: 3rem; }
+/* Embedded in the console (no document header — the console draws one). The
+   standalone page needs vertical air because the document IS the page; inside
+   a card that already has padding, the same air is just a gap the reader has
+   to scroll past. The horizontal padding stays: it is the text's margin from
+   the frame edge, not decoration. */
+body.embedded .doc { padding-top: 0.5rem; padding-bottom: 0.75rem; }
+/* The PUBLIC embed is the same "no chrome" state with a different neighbour:
+   under the trusted share shell there is no card, no inset and no padding
+   around the frame — the frame edge IS the page edge. So it keeps the
+   standalone page's vertical air rather than the console's tighter one, and
+   the document reads as the page's own content instead of a pane inside it. */
+body.embedded-public .doc { padding-top: 1.75rem; padding-bottom: 2.5rem; }
+.doc pre, .doc .highlight {
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 0.85rem 1rem; overflow-x: auto;
+  font: 13px/1.5 var(--f-mono);
+}
+.doc .highlight pre { background: none; border: 0; padding: 0; margin: 0; font: inherit; }
+.doc code { font: 0.9em var(--f-mono); }
+.doc img, .artifact-image { max-width: 100%; height: auto; border-radius: var(--r-md); }
+.doc video, .artifact-video {
+  max-width: 100%; height: auto; border-radius: var(--r-md);
+  background: #000; display: block;
+}
+/* A usable floor for a standalone video. The element sizes to the clip's
+   intrinsic dimensions, so a tiny encode (a 64px thumbnail-sized clip is
+   real: agents generate them) renders as a box too small for the native
+   controls, which collapse play, mute and fullscreen into the overflow menu
+   — the fullscreen permission the shell delegates is then unreachable. 20rem
+   is the width at which Chrome and Safari lay the full control bar out; the
+   clip letterboxes inside it (`object-fit: contain` is the default for
+   video). `min(100%, …)` keeps the floor inside a narrow viewport rather
+   than overflowing it, and it applies only to the standalone artifact — a
+   video embedded in a document keeps the author's size. */
+.artifact-video { min-width: min(100%, 20rem); }
+.doc table { border-collapse: collapse; width: 100%; }
+.doc th, .doc td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+/* Table column alignment, as classes rather than the `style="text-align:…"`
+   markdown-it emits: `style-src 'self'` refuses the attribute, so `| ---: |`
+   rendered left and logged a violation per cell. Specificity (0,2,0) beats
+   the (0,1,1) default above. */
+.doc .ta-left { text-align: left; }
+.doc .ta-center { text-align: center; }
+.doc .ta-right { text-align: right; }
+
+/* Delimited data (`mode="table"`). The scroll wrapper is the point: a 40-column
+   CSV must scroll ITSELF rather than widen the document, or the whole page
+   picks up a horizontal scrollbar and every paragraph goes off-screen with it. */
+.table-scroll { overflow-x: auto; max-width: 100%; }
+.data-table { width: auto; min-width: 100%; font: 13px/1.5 var(--f-mono); }
+.data-table th {
+  background: var(--bg-panel); position: sticky; top: 0;
+  font-weight: 600; white-space: nowrap;
+}
+.data-table td { white-space: nowrap; }
+/* `caption-side: bottom` keeps the truncation note with the data it qualifies
+   — above the table it reads as a title. */
+.table-note {
+  caption-side: bottom; text-align: left; padding-top: 0.5rem;
+  color: var(--fg-muted); font: 12px var(--f-ui);
+}
+/* The same quiet statement for a Word document whose equations or fields the
+   converter could not carry — after the content, in the same voice. */
+.doc-note { margin-top: 1.5rem; color: var(--fg-muted); font: 12px var(--f-ui); }
+
+/* A workbook. Reuses `.data-table` wholesale so a csv and a sheet of an xlsx
+   look like the same thing, which they are. What is added is the spreadsheet
+   frame: column letters across the top, row numbers down the side, and the
+   tab strip.
+
+   Switching is `:target` and nothing else — no script, on either surface.
+   The renderer emits every sheet as a panel and each panel carries its own
+   copy of the strip, so the current tab is right without CSS having to style
+   an anchor from the element it points at.
+
+   Read the cascade here carefully before touching it. `:has()` takes the
+   specificity of its argument, so `.workbook:has(.workbook-sheet:target)
+   .workbook-sheet` scores (0,4,0) and outranks a bare `.workbook-sheet:target` at
+   (0,2,0) — which hid EVERY panel the moment a tab was clicked, verified in
+   a browser. Each rule below therefore states its own specificity, and the
+   two `:has()` rules are ordered so the target wins.
+
+   The no-`:has()` path is deliberate too: rules 1-3 alone leave the first
+   sheet AND the targeted one visible — two grids stacked, which is legible.
+   Ordering it the other way fails to a blank document, which is not. */
+.workbook-sheet { display: none; }                                    /* (0,1,0) */
+.workbook-sheet:first-child { display: block; }                       /* (0,2,0) */
+.workbook-sheet:target { display: block; }                            /* (0,2,0) */
+.workbook:has(.workbook-sheet:target) .workbook-sheet:first-child {
+  display: none;                                                   /* (0,4,0) */
+}
+.workbook:has(.workbook-sheet:target) .workbook-sheet:target {
+  display: block;                                                  /* (0,5,0) */
+}
+
+/* The strip sits BELOW the grid, where Excel and Sheets both put it, so the
+   muscle memory transfers. */
+.workbook-tabs {
+  display: flex; gap: 2px; overflow-x: auto;
+  margin-top: 0.75rem; padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+.workbook-tab {
+  flex: none; padding: 0.3rem 0.7rem; border-radius: 4px 4px 0 0;
+  font: 12px var(--f-mono); color: var(--fg-muted);
+  text-decoration: none; white-space: nowrap;
+}
+.workbook-tab:hover { background: var(--bg-panel); color: var(--fg); }
+.workbook-tab.is-current {
+  background: var(--bg-panel); color: var(--fg); font-weight: 600;
+  box-shadow: inset 0 2px 0 var(--canopy);
+}
+/* The row/column frame is chrome, not data: receded so the values read
+   first, and never wrapping, because a spreadsheet address that breaks
+   across two lines stops being an address. */
+.workbook-grid .workbook-corner,
+.workbook-grid .workbook-rownum {
+  background: var(--bg-panel); color: var(--fg-muted);
+  font-weight: 400; text-align: right; white-space: nowrap;
+  position: sticky; left: 0;
+}
+.workbook-grid tbody .workbook-rownum { top: auto; }
+.workbook-grid thead th { text-align: center; color: var(--fg-muted); font-weight: 400; }
+/* An empty cell stays empty — a spreadsheet is mostly empty cells, and a
+   placeholder glyph in every one of them would be louder than the data. The
+   min-width is what keeps them from collapsing to nothing. */
+.workbook-grid td { min-width: 3rem; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* A remote image the CSP refuses. Drawn as a visible, labelled placeholder
+   rather than left to the browser's broken-image glyph: the block is the
+   policy working, and it should not read as the document being damaged. */
+.blocked-remote {
+  display: inline-flex; flex-direction: column; gap: 0.15rem;
+  padding: 0.6rem 0.8rem; border: 1px dashed var(--border);
+  border-radius: var(--r-md); background: var(--bg-panel);
+  color: var(--fg-muted); font-size: 13px; vertical-align: middle;
+}
+.blocked-remote span:last-child { font: 11px var(--f-mono); opacity: 0.85; }
+
+/* GFM task lists. The checkbox replaces the marker rather than sitting beside
+   it — a bullet AND a box reads as two different list styles fighting, which
+   is what the browser default produces.
+
+   Scoped to the ITEM, not the list: a task list may hold ordinary bullets
+   too, and suppressing the marker list-wide silently deleted them. An author
+   who wrote `- plain` gets a bullet; one who wrote `- [ ] plain` gets a box. */
+.doc .task-list-item { list-style: none; }
+.doc .task-list-item-checkbox {
+  margin: 0 0.45rem 0 0; vertical-align: middle; accent-color: var(--canopy);
+}
+
+.empty-card p:last-child { color: var(--fg-muted); }
+
+/* `mode="page"` — an HTML artifact rendered as a document rather than as its
+   own source, with the source a click away.
+
+   Two independent reasons an artifact cannot wear these rules. The sanitiser
+   namespaces every class it keeps (`btn` -> `ua-btn`), so no artifact class
+   reaches ANY selector in this file — that is the general guarantee, and it
+   covers the chrome rules further down as well. On top of it, the interactive
+   selectors here key on `[data-view]`, which is outside the attribute
+   allowlist, and `<button>` is dropped with its contents. Keep both: the
+   namespacing protects rules nobody remembered to scope, the attribute
+   scoping survives a future decision to allow classes through. */
+.doc-modes { display: flex; gap: 0.4rem; margin: 0 0 1.5rem; }
+.doc-mode[data-view] {
+  padding: 0.25rem 0.7rem; border: 1px solid var(--border);
+  border-radius: var(--r-md); background: var(--bg-panel);
+  color: var(--fg-muted); font: 12px var(--f-ui); cursor: pointer;
+}
+.doc-mode[data-view]:hover { color: var(--fg); }
+.doc-mode[data-view].is-current { color: var(--fg); border-color: var(--canopy); }
+/* Explicit rather than left to the UA default: if `.doc-view` is ever given
+   a `display`, that rule would outrank `[hidden]` and reveal both panes. */
+.doc-view[data-view][hidden] { display: none; }
+
+/* The untrusted-content band. Public surface only — see viewer.html — though
+   the rules ship in this shared stylesheet, which the private viewer also
+   serves; one stylesheet for a rendered document is the point, and a few
+   unused rules are cheaper than a second file to keep in sync.
+
+   Drawn as a quiet note, not an alarm: the page is not dangerous, its
+   authorship is simply not ours, and a red warning on every rendered report
+   would be ignored by the second one. This band is the ONLY mitigation §6.3
+   names against impersonation, which is why the sanitiser namespaces artifact
+   classes — a forged `untrusted-band` rendered identical to the genuine one,
+   and said the opposite. */
+.untrusted-wrap { padding-top: 1.25rem; }
+.untrusted-band {
+  margin: 0; padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border); border-left: 3px solid var(--fg-muted);
+  border-radius: var(--r-md); background: var(--bg-panel);
+  color: var(--fg-muted); font-size: 13px; line-height: 1.5;
+}
+
+.doc blockquote {
+  margin: 1rem 0; padding-left: 1rem;
+  border-left: 3px solid var(--border); color: var(--fg-muted);
+}
+/* Folder listing (`/f/{id}/`). The .doc table rules above already draw the
+   grid; only the column rhythm and the link colour are specific to it. */
+.listing .cell-kind { width: 1%; white-space: nowrap; }
+.listing .cell-size {
+  width: 1%; white-space: nowrap; text-align: right;
+  color: var(--fg-muted); font: 12px var(--f-mono);
+}
+.listing .cell-name a { color: var(--canopy); word-break: break-all; }
+.listing-note { color: var(--fg-muted); font-size: 13px; }
+
+.download-card { text-align: center; padding: 3rem 1rem; }
+.btn {
+  display: inline-block; padding: 0.5rem 1rem; border-radius: var(--r-md);
+  background: var(--canopy); color: #fff; text-decoration: none;
+}
+.doc-foot {
+  padding: 1.5rem 1.25rem 3rem; border-top: 1px solid var(--border);
+  color: var(--fg-muted); font-size: 13px;
+}
+/* `:not(.btn)` is load-bearing. `.doc a` outranks `.btn` on specificity
+   (0,1,1 vs 0,1,0), so without it this paints the download button's label in
+   the same colour as the button's own background and the label vanishes — in
+   both themes, since --canopy is the button background in each. */
+.doc a:not(.btn) { color: var(--canopy); text-decoration: underline; text-underline-offset: 2px; }
+.doc a:not(.btn):hover { text-decoration-thickness: 2px; }
+/* An anchor whose href the sanitiser REFUSED (a `javascript:` target, say) is
+   still an `<a>` — the rule above would paint it as a working link, and a
+   reader clicking "Verify your account" and getting nothing has been misled
+   by us rather than by the artifact. No href, no link affordance. */
+.doc a:not([href]) {
+  color: inherit; text-decoration: none; cursor: default;
+}
+.doc-foot a { color: var(--fg-muted); }
+.notfound { text-align: center; padding: 5rem 1rem; }
+
+/* Syntax highlighting. Pygments emits `class="highlight"` + one-or-two-letter
+   token classes and NO inline style (render.py sets cssclass=), which is what
+   keeps it CSP-clean - so the colours have to live here. These rules are
+   generated, not hand-written:
+
+     HtmlFormatter(style="default", cssclass="highlight").get_style_defs(".highlight")
+     HtmlFormatter(style="github-dark", cssclass="highlight")
+         .get_style_defs('html[data-theme="dark"] .highlight')
+
+   with the container/linenos preamble dropped (`.doc .highlight` above owns
+   the panel) and the result checked in as static text - nothing is generated
+   at request time. Regenerate the same way if the styles ever change. */
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+/* The dark palette hangs off the resolved attribute, NOT the media query.
+   Both surfaces always stamp one (see the token blocks at the top), and the
+   shell cannot render at all without script, so `[data-theme]` is present
+   wherever a highlighted document is. Selecting on the OS instead would
+   paint a dark-OS reader's code blocks dark inside a console they had set
+   to light — the same mismatch the tokens above exist to prevent. */
+html[data-theme="dark"] .highlight .c { color: #8B949E; font-style: italic } /* Comment */
+html[data-theme="dark"] .highlight .err { color: #F85149 } /* Error */
+html[data-theme="dark"] .highlight .esc { color: #E6EDF3 } /* Escape */
+html[data-theme="dark"] .highlight .g { color: #E6EDF3 } /* Generic */
+html[data-theme="dark"] .highlight .k { color: #FF7B72 } /* Keyword */
+html[data-theme="dark"] .highlight .l { color: #A5D6FF } /* Literal */
+html[data-theme="dark"] .highlight .n { color: #E6EDF3 } /* Name */
+html[data-theme="dark"] .highlight .o { color: #FF7B72; font-weight: bold } /* Operator */
+html[data-theme="dark"] .highlight .x { color: #E6EDF3 } /* Other */
+html[data-theme="dark"] .highlight .p { color: #E6EDF3 } /* Punctuation */
+html[data-theme="dark"] .highlight .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+html[data-theme="dark"] .highlight .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+html[data-theme="dark"] .highlight .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+html[data-theme="dark"] .highlight .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+html[data-theme="dark"] .highlight .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+html[data-theme="dark"] .highlight .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+html[data-theme="dark"] .highlight .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+html[data-theme="dark"] .highlight .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+html[data-theme="dark"] .highlight .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+html[data-theme="dark"] .highlight .gr { color: #FFA198 } /* Generic.Error */
+html[data-theme="dark"] .highlight .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+html[data-theme="dark"] .highlight .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+html[data-theme="dark"] .highlight .go { color: #8B949E } /* Generic.Output */
+html[data-theme="dark"] .highlight .gp { color: #8B949E } /* Generic.Prompt */
+html[data-theme="dark"] .highlight .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+html[data-theme="dark"] .highlight .gu { color: #79C0FF } /* Generic.Subheading */
+html[data-theme="dark"] .highlight .gt { color: #FF7B72 } /* Generic.Traceback */
+html[data-theme="dark"] .highlight .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+html[data-theme="dark"] .highlight .kc { color: #79C0FF } /* Keyword.Constant */
+html[data-theme="dark"] .highlight .kd { color: #FF7B72 } /* Keyword.Declaration */
+html[data-theme="dark"] .highlight .kn { color: #FF7B72 } /* Keyword.Namespace */
+html[data-theme="dark"] .highlight .kp { color: #79C0FF } /* Keyword.Pseudo */
+html[data-theme="dark"] .highlight .kr { color: #FF7B72 } /* Keyword.Reserved */
+html[data-theme="dark"] .highlight .kt { color: #FF7B72 } /* Keyword.Type */
+html[data-theme="dark"] .highlight .ld { color: #79C0FF } /* Literal.Date */
+html[data-theme="dark"] .highlight .m { color: #A5D6FF } /* Literal.Number */
+html[data-theme="dark"] .highlight .s { color: #A5D6FF } /* Literal.String */
+html[data-theme="dark"] .highlight .na { color: #E6EDF3 } /* Name.Attribute */
+html[data-theme="dark"] .highlight .nb { color: #E6EDF3 } /* Name.Builtin */
+html[data-theme="dark"] .highlight .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+html[data-theme="dark"] .highlight .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+html[data-theme="dark"] .highlight .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+html[data-theme="dark"] .highlight .ni { color: #FFA657 } /* Name.Entity */
+html[data-theme="dark"] .highlight .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+html[data-theme="dark"] .highlight .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+html[data-theme="dark"] .highlight .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+html[data-theme="dark"] .highlight .nn { color: #FF7B72 } /* Name.Namespace */
+html[data-theme="dark"] .highlight .nx { color: #E6EDF3 } /* Name.Other */
+html[data-theme="dark"] .highlight .py { color: #79C0FF } /* Name.Property */
+html[data-theme="dark"] .highlight .nt { color: #7EE787 } /* Name.Tag */
+html[data-theme="dark"] .highlight .nv { color: #79C0FF } /* Name.Variable */
+html[data-theme="dark"] .highlight .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+html[data-theme="dark"] .highlight .pm { color: #E6EDF3 } /* Punctuation.Marker */
+html[data-theme="dark"] .highlight .w { color: #6E7681 } /* Text.Whitespace */
+html[data-theme="dark"] .highlight .mb { color: #A5D6FF } /* Literal.Number.Bin */
+html[data-theme="dark"] .highlight .mf { color: #A5D6FF } /* Literal.Number.Float */
+html[data-theme="dark"] .highlight .mh { color: #A5D6FF } /* Literal.Number.Hex */
+html[data-theme="dark"] .highlight .mi { color: #A5D6FF } /* Literal.Number.Integer */
+html[data-theme="dark"] .highlight .mo { color: #A5D6FF } /* Literal.Number.Oct */
+html[data-theme="dark"] .highlight .sa { color: #79C0FF } /* Literal.String.Affix */
+html[data-theme="dark"] .highlight .sb { color: #A5D6FF } /* Literal.String.Backtick */
+html[data-theme="dark"] .highlight .sc { color: #A5D6FF } /* Literal.String.Char */
+html[data-theme="dark"] .highlight .dl { color: #79C0FF } /* Literal.String.Delimiter */
+html[data-theme="dark"] .highlight .sd { color: #A5D6FF } /* Literal.String.Doc */
+html[data-theme="dark"] .highlight .s2 { color: #A5D6FF } /* Literal.String.Double */
+html[data-theme="dark"] .highlight .se { color: #79C0FF } /* Literal.String.Escape */
+html[data-theme="dark"] .highlight .sh { color: #79C0FF } /* Literal.String.Heredoc */
+html[data-theme="dark"] .highlight .si { color: #A5D6FF } /* Literal.String.Interpol */
+html[data-theme="dark"] .highlight .sx { color: #A5D6FF } /* Literal.String.Other */
+html[data-theme="dark"] .highlight .sr { color: #79C0FF } /* Literal.String.Regex */
+html[data-theme="dark"] .highlight .s1 { color: #A5D6FF } /* Literal.String.Single */
+html[data-theme="dark"] .highlight .ss { color: #A5D6FF } /* Literal.String.Symbol */
+html[data-theme="dark"] .highlight .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+html[data-theme="dark"] .highlight .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+html[data-theme="dark"] .highlight .vc { color: #79C0FF } /* Name.Variable.Class */
+html[data-theme="dark"] .highlight .vg { color: #79C0FF } /* Name.Variable.Global */
+html[data-theme="dark"] .highlight .vi { color: #79C0FF } /* Name.Variable.Instance */
+html[data-theme="dark"] .highlight .vm { color: #79C0FF } /* Name.Variable.Magic */
+html[data-theme="dark"] .highlight .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+
+/* No-script fallback. With no attribute stamped the rules above cannot
+   match, so a dark-OS reader would get the light palette on the dark page
+   background the media query above still applies. Rather than restate 79
+   generated rules for a case that only arises with JavaScript off, keep the
+   code panel itself light so the light palette stays legible on it. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) .doc pre,
+  html:not([data-theme]) .doc .highlight {
+    background: #fff; border-color: #e4e0d8; color: #1a1a17;
+  }
+}
+
+/* ── viewer bar ─────────────────────────────────────────────────────────
+   Ported from the legacy viewer's sticky `.viewer-bar`. A share-link reader
+   is not the owner, so it carries only what a visitor can act on: identity,
+   what this is, and the two things they might want to do with it. */
+.viewer-bar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 1.25rem;
+  background: var(--bg-panel); border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.lockup-sm {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  color: var(--fg); text-decoration: none; font-weight: 600;
+}
+.lockup-sm svg { flex: none; }
+.bar-sep { width: 1px; height: 18px; background: var(--border); }
+.path-display { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.path-text { color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.path-text strong { color: var(--fg); font-weight: 600; }
+.grow { flex: 1 1 auto; }
+.bar-btn {
+  display: inline-block; padding: 0.3rem 0.7rem; border-radius: var(--r-md);
+  border: 1px solid var(--border); background: transparent; color: var(--fg);
+  font: inherit; font-size: 12px; text-decoration: none; cursor: pointer;
+}
+.bar-btn:hover { border-color: var(--canopy); color: var(--canopy); }
+.bar-theme { min-width: 4.2rem; }
+
+/* The bar is dense; below this width the actions wrap rather than crush the
+   filename, which is the one thing a reader needs to see. */
+@media (max-width: 34rem) {
+  .viewer-bar { flex-wrap: wrap; }
+  .grow { flex-basis: 100%; height: 0; }
+}
+
+/* ── pdf ────────────────────────────────────────────────────────────────
+   `<embed>` renders in the browser's own PDF engine — no script of ours, and
+   the document is isolated from this page. Tall enough to be a document
+   rather than a thumbnail. */
+.pdf-frame { margin: 1.25rem 0; }
+.pdf-frame embed {
+  display: block; width: 100%; height: min(80vh, 900px);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--bg-panel);
+}
+.pdf-fallback { color: var(--fg-muted); font-size: 13px; }
+
+/* ── machine strip ──────────────────────────────────────────────────────
+   Provenance for agent readers, in the markup rather than behind an API
+   call — the legacy viewer's `.machine-strip`, same intent. */
+.machine-strip {
+  display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.75rem;
+  margin: 0 0 1rem; font: 12px var(--f-mono); color: var(--fg-muted);
+}
+.machine-strip dt { color: var(--fg-muted); opacity: 0.75; }
+.machine-strip dd { margin: 0; word-break: break-all; }
+.machine-strip a { color: inherit; }
+
+/* ── pdf.js viewer ──────────────────────────────────────────────────────
+   Shell only. pdf_viewer.css (vendored, loaded alongside) owns the page and
+   text-layer internals; these are the surrounding chrome. */
+/* 46rem is right for prose and wrong for a document: it squeezed the PDF into
+   a narrow strip with most of the window empty. A PDF page is a fixed aspect
+   ratio, so it wants width.
+   The same is true of the other two modes whose content is not a line of text.
+   A 40-column table scrolled inside 46rem while the frame around it sat half
+   empty, and an image was letterboxed to a measure chosen for paragraphs. Prose
+   keeps 46rem: there a wider frame should give bigger margins, not longer
+   lines, because line length is the thing that measure is protecting. */
+.mode-pdf .doc,
+.mode-pdf .doc-head,
+.mode-pdf .doc-foot,
+.mode-table .doc,
+.mode-table .doc-head,
+.mode-table .doc-foot,
+/* A workbook needs the width for the same reason a csv does: columns are
+   the whole point, and 46rem of prose measure turns a grid into a scroller. */
+.mode-sheet .doc,
+.mode-sheet .doc-head,
+.mode-sheet .doc-foot,
+.mode-image .doc,
+.mode-image .doc-head,
+.mode-image .doc-foot { max-width: min(1500px, 96vw); }
+.pdf-doc {
+  display: flex; flex-direction: column; height: min(88vh, 1100px);
+  margin: 1rem 0 2rem; border: 1px solid var(--border);
+  border-radius: var(--r-md); overflow: hidden; background: var(--bg);
+}
+
+/* Embedded in the console, a PDF fills the frame exactly.
+   Standalone, `.pdf-doc` is a tall box on a scrollable page and the page's own
+   scrollbar is the only one. Inside an iframe that arrangement produced TWO:
+   88vh of the frame, plus the document's padding and this element's margin,
+   came to more than the frame, so the iframe scrolled a box that scrolled
+   itself. The reader got two scrollbars a few pixels apart and neither did
+   what they expected.
+   The chain has to start at the ROOT — a height on `.doc` alone resolves
+   against an auto-height body — which is why shell.js mirrors the mode and the
+   embedded flag onto <html> rather than only onto <body>. */
+html[data-embedded][data-mode="pdf"],
+html[data-embedded][data-mode="pdf"] body { height: 100%; }
+html[data-embedded][data-mode="pdf"] body.embedded .doc {
+  height: 100%; padding-top: 0; padding-bottom: 0;
+}
+html[data-embedded][data-mode="pdf"] .pdf-doc {
+  /* The frame is already a bordered, rounded box drawn by the console; a
+     second border inside it is a line for its own sake. */
+  height: 100%; margin: 0; border: 0; border-radius: 0;
+}
+.pdf-toolbar, .pdf-find {
+  flex: none;
+  display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.6rem;
+  background: var(--bg-panel); border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.pv-btn {
+  padding: 0.25rem 0.55rem; border: 1px solid var(--border);
+  border-radius: var(--r-md); background: transparent; color: var(--fg);
+  font: inherit; line-height: 1.4; cursor: pointer;
+}
+.pv-btn:hover { border-color: var(--canopy); color: var(--canopy); }
+.pv-page, .pv-pct {
+  width: 4rem; padding: 0.2rem 0.35rem; text-align: center;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--bg); color: var(--fg); font: 12px var(--f-mono);
+}
+.pv-total { color: var(--fg-muted); font: 12px var(--f-mono); }
+.pdf-find input {
+  flex: 1 1 auto; padding: 0.2rem 0.4rem; border: 1px solid var(--border);
+  border-radius: var(--r-md); background: var(--bg); color: var(--fg); font: inherit;
+}
+/* Ported verbatim from the legacy viewer (agentdrive.css). pdf.js REQUIRES an
+   absolutely-positioned container and throws outright without one — the
+   relative-positioned box I first wrote failed with exactly that error. */
+.pdf-doc-body { position: relative; flex: 1; min-height: 0; }
+.pdf-host { position: absolute; inset: 0; overflow: auto; background: var(--bg); padding: 14px 6px 32px; }
+.pdf-doc-fallback { padding: 3rem 1rem; text-align: center; color: var(--fg-muted); }
+
+/* `[hidden]` only sets display:none in the UA sheet; a later display:flex
+   beats it, which left the find bar permanently open. */
+.pdf-find[hidden] { display: none; }
+
+/* Shared reading controls, outside the artifact-authored content. */
+.doc-modes { align-items: center; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem 0; }
+.doc-modes[hidden] { display: none; }
+.reading-button, .doc-modes input {
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--bg-panel); color: var(--fg); font: 12px var(--f-ui);
+  padding: 0.35rem 0.55rem; min-height: 32px;
+}
+.reading-button { cursor: pointer; }
+.reading-button[aria-pressed="true"] { border-color: var(--canopy); }
+.doc-modes input { min-width: 8rem; width: 10rem; }
+.reading-count { color: var(--fg-muted); font: 12px var(--f-ui); }
+.reading-content { min-width: 0; }
+.reading-content:focus-visible, .doc-modes :focus-visible {
+  outline: 2px solid var(--canopy); outline-offset: -2px;
+}
+.reading-limit { flex-basis: 100%; color: var(--fg-muted); font: 12px var(--f-ui); }
+.reading-wrap .data-table td { white-space: normal; min-width: 8rem; max-width: 24rem; overflow-wrap: anywhere; }
+.reading-wrap pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.data-table .row-number { color: var(--fg-muted); font-weight: 400; text-align: right; }
+.data-table tbody th { position: static; }
+.doc audio { width: 100%; }
+
+/* Embedded reading: a full height chain with one scroll owner in both
+   public and private viewers. Unframed pages keep normal document flow. */
+html[data-reading="contained"] { --reading-width: 46rem; }
+html[data-reading="contained"], html[data-reading="contained"] body {
+  height: 100%; overflow: hidden; overscroll-behavior: contain;
+}
+html[data-reading="contained"] body {
+  display: flex; flex-direction: column; overflow: auto;
+}
+html[data-reading="contained"] .untrusted-wrap { flex: none; }
+html[data-reading="contained"] body.embedded .doc {
+  display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: none;
+  padding: 0; margin: 0;
+}
+html[data-reading="contained"] .doc-modes {
+  flex: none; margin: 0; padding: 8px 12px;
+  background: var(--bg-panel); border-bottom: 1px solid var(--border);
+}
+html[data-reading="contained"] .reading-content {
+  flex: 1; min-height: 8rem; overflow: auto; overscroll-behavior: contain;
+  padding: 12px 20px;
+}
+html[data-reading="contained"] :is(.markdown, .page, .document) .doc-view {
+  max-width: var(--reading-width); margin: 0 auto;
+}
+/* The controls start where the page does. With the column capped and centred
+   (the expanded reader, a wide console) a strip pinned to the frame's left
+   edge sits far from the text it acts on. Same arithmetic as the column —
+   `.reading-content` pads 20px, so the column's left edge is
+   max(20px, (width − column) / 2) — with the strip's own 12px floor once the
+   frame is narrower than the column. Background and rule still span the frame. */
+html[data-reading="contained"] :is(.markdown, .page) .doc-modes {
+  padding-inline: max(12px, calc((100% - var(--reading-width)) / 2));
+}
+html[data-reading="contained"] .code :is(pre, .highlight),
+html[data-reading="contained"] .doc-view[data-view="source"] :is(pre, .highlight) {
+  overflow: visible; border: 0; padding: 0; margin: 0;
+}
+html[data-reading="contained"] :is(.table, .sheet) .reading-content {
+  overflow: hidden; padding: 0;
+}
+html[data-reading="contained"] .table[data-view="source"] .reading-content {
+  overflow: auto; padding: 12px 20px;
+}
+html[data-reading="contained"] :is(.table .doc-view, .workbook) { height: 100%; }
+html[data-reading="contained"] .table-scroll {
+  height: 100%; overflow: auto; overscroll-behavior: contain;
+}
+html[data-reading="contained"] .workbook-sheet { height: 100%; flex-direction: column; }
+html[data-reading="contained"] .workbook-sheet:first-child,
+html[data-reading="contained"] .workbook-sheet:target { display: flex; }
+html[data-reading="contained"] .workbook:has(.workbook-sheet:target) .workbook-sheet:first-child { display: none; }
+html[data-reading="contained"] .workbook:has(.workbook-sheet:target) .workbook-sheet:target { display: flex; }
+html[data-reading="contained"] .workbook .table-scroll { flex: 1; min-height: 0; }
+html[data-reading="contained"] .workbook-tabs { flex: none; margin: 0; padding: 8px; }
+html[data-reading="contained"] .data-table thead th { z-index: 1; }
+html[data-reading="contained"] .pdf-host { overscroll-behavior: contain; }
+html[data-reading="contained"] .pdf-toolbar { flex-wrap: wrap; }
+html[data-reading="contained"] :is(.image, .video) .reading-content { text-align: center; }
+html[data-reading="contained"] .artifact-video,
+html[data-reading="contained"] [data-image-zoom="fit"] .artifact-image {
+  max-height: 100%; max-width: 100%; width: auto; height: auto; object-fit: contain;
+}
+[data-image-zoom="actual"] .artifact-image { max-width: none; max-height: none; }
+@media (max-width: 600px) {
+  .reading-button, .doc-modes input, .doc-mode[data-view] { min-height: 44px; }
+}
+
+/* Very short windows can scroll the enclosing body to reach the controls. */
+html[data-reading="contained"] .pdf-doc-body { min-height: 8rem; }
+html[data-reading="contained"] .pdf-doc { overflow: visible; }
+html[data-reading="contained"] .pdf-find { flex-wrap: wrap; }
+
+/* Public prose has one alignment axis for attribution, tools and document. */
+html[data-reading="contained"] .embedded-public :is(.markdown, .page, .document) .doc-modes,
+html[data-reading="contained"] .embedded-public .untrusted-wrap {
+  padding-inline: max(20px, calc((100% - var(--reading-width)) / 2));
+}
+html[data-reading="contained"] .embedded-public .untrusted-wrap {
+  width: 100%; max-width: none; padding-block: 8px;
+  background: var(--bg-panel); border-bottom: 1px solid var(--border);
+}
+.embedded-public .untrusted-band {
+  padding: 0; border: 0; border-radius: 0; background: transparent;
+}
+.untrusted-band summary { cursor: pointer; }
+.untrusted-band summary:focus-visible {
+  outline: 2px solid var(--canopy); outline-offset: 3px;
+}
+.untrusted-band p { margin: 8px 0 0; }
+.reading-button[aria-label] { min-width: 32px; }
+@media (max-width: 600px) {
+  .reading-button[aria-label] { min-width: 44px; }
+}
+
+/* Diagrams. A ```mermaid fence arrives as `.diagram-source` and `diagrams.js`
+   replaces it with a figure holding the drawn SVG as an <img> — an image,
+   never inline SVG, so the strict CSP stays and the drawing cannot reach the
+   page. The source stays a click away because an agent's diagram is often
+   worth reading as text too. Until the script runs, or if it cannot, the
+   source is simply a code block. */
+.diagram-figure { margin: 1.5rem 0; }
+.diagram-figure img.diagram { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.diagram-figure details { margin-top: 0.5rem; }
+.diagram-figure summary { cursor: pointer; color: var(--fg-muted); font: 12px var(--f-ui); }
+.diagram-failed { border-color: var(--accent); }
+.diagram-note { margin: 0 0 0.5rem; color: var(--fg-muted); font: 12px var(--f-ui); }
+[data-theme="dark"] .diagram-figure img.diagram { background: transparent; }
+/* The engine's frame: rendered (getBBox needs layout) but never seen. Not
+   `hidden` — display:none would give the engine a document with no layout
+   and every text measurement would be zero. A real width, too: a gantt or a
+   timeline sizes itself to its container, and a 1px container yields
+   negative rectangles and a console full of SVG errors. */
+iframe.diagram-scratch {
+  position: absolute; left: -20000px; top: 0; width: 1200px; height: 900px;
+  border: 0; opacity: 0; pointer-events: none;
+}
+
+/* A JSON tree. Each object and array is a native <details>, so folding needs
+   no script; the markup is ours (`rendering/data.py`), never the author's.
+   Monospace like a code block, because it IS the document's structure, with
+   the same key/string/number colouring Pygments gives the source pane. */
+.json-tree { font: 0.9em/1.55 var(--f-mono); overflow-x: auto; }
+.json-tree details, .json-tree .json-leaf { margin: 0; }
+.json-tree summary { cursor: pointer; list-style: none; display: inline-block; }
+.json-tree summary::-webkit-details-marker { display: none; }
+.json-tree summary::before {
+  content: "▸"; display: inline-block; width: 1em; color: var(--fg-muted);
+  transition: transform 120ms ease;
+}
+.json-tree details[open] > summary::before { transform: rotate(90deg); }
+.json-tree .json-leaf { padding-left: 1em; }
+.json-tree .json-children { padding-left: 1.5em; border-left: 1px solid var(--border); margin-left: 0.4em; }
+.json-tree .json-close { padding-left: 1em; color: var(--fg-muted); }
+.json-tree details:not([open]) > .json-close { display: none; }
+.json-tree .json-key { color: var(--canopy); }
+.json-tree .json-string { color: var(--accent); white-space: pre-wrap; overflow-wrap: anywhere; }
+.json-tree .json-number { color: var(--machine, var(--fg)); }
+.json-tree .json-bool, .json-tree .json-null { color: var(--fg-muted); font-style: italic; }
+.json-tree .json-brace, .json-tree .json-punct { color: var(--fg-muted); }
+.json-tree .json-count { margin-left: 0.5em; color: var(--fg-muted); font: 11px var(--f-ui); }
+.json-tree details[open] > summary .json-count { display: none; }
+.json-tree .json-more { padding-left: 1em; color: var(--fg-muted); font: 12px var(--f-ui); }
+@media (prefers-reduced-motion: reduce) { .json-tree summary::before { transition: none; } }
+/* A slide deck, as its content. One section per slide with a numbered
+   heading, a rule between slides so the reader can feel the page turn, the
+   speaker notes folded behind a disclosure, pictures inline and bounded. */
+.deck .slide { padding: 1.25rem 0 1.5rem; border-top: 1px solid var(--border); }
+.deck .slide:first-child { border-top: 0; padding-top: 0; }
+.deck .slide h2 { display: flex; align-items: baseline; gap: 0.6rem; margin-top: 0; }
+.deck .slide-number {
+  flex: none; min-width: 1.6em; text-align: center; padding: 0 0.3em;
+  border: 1px solid var(--border); border-radius: var(--r-sm, 4px);
+  color: var(--fg-muted); font: 12px/1.6 var(--f-mono);
+}
+.deck .slide-picture { margin: 1rem 0; }
+.deck .slide-picture img { max-width: 100%; height: auto; display: block; }
+.deck .slide-notes { margin-top: 1rem; }
+.deck .slide-notes summary { cursor: pointer; color: var(--fg-muted); font: 12px var(--f-ui); }
+.deck .slide-notes p { color: var(--fg-muted); font-size: 0.95em; }
+
+/* XML in the same tree: tags take the key colour, attribute names the muted
+   one, attribute values and text the string colour. */
+.json-tree .xml-tag { color: var(--canopy); }
+.json-tree .xml-attr { color: var(--fg-muted); }
+.json-tree .xml-text { color: var(--fg); white-space: pre-wrap; overflow-wrap: anywhere; }

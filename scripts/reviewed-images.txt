@@ -1,0 +1,25 @@
+# Every image the public tree ships, with the SHA-256 of the exact bytes a
+# person looked at. The publish gate refuses an image that is missing here or
+# whose bytes changed: pixels cannot be pattern-matched, so they are reviewed.
+# Regenerate a line with: shasum -a 256 <path>
+2bb54041308ac08cbbd461867755acadc5cb09fa35fd207c565ea015c17bdbde  assets/connector-icon-1024.png
+81f38ab10f6fbe61794e15fbf7852b61629e3926d7d8bf80b01b2e3001696a71  assets/connector-icon-512.png
+08706c7b67596c856f749fd056969cfce118350f7a2e91779e55a092f90f4713  assets/logo-1024.png
+b51186510ce211fbe73db5f07ae2877735d9807149da27748e8d5d0781901062  assets/logo-512.png
+9ad6867550df4caf56c037faa87ecf6de499afc3cf9d3f3e9a5547cc0f3c55b0  extensions/snipit/icons/icon-128.png
+200f084cb67214452e049d021fa77c0fdee6807018ef174439c1e318651eac3a  extensions/snipit/icons/icon-16.png
+1a62cdfa8718a9706fffa4d19a41388749d2b15cae4fdcdadab0dc5068752da5  extensions/snipit/icons/icon-48.png
+3eaed5ab012190b1e249cb04044d2fbc1ca63632c15bfc9d71f0962d3a3c864f  src/agentdrive/static/apple-touch-icon.png
+80e8f33a0e7e840aab6c2d12436f3dc378c33d3f3b8161918ce93aedf3f89caf  src/agentdrive/static/favicon-32.png
+094c471bdcea1eb7ab51031e430c6385ea4a72a4f521f55ac26571aa7e60f3cf  src/agentdrive/static/img/doodle-file-dark.png
+8023467a6d7176b24673b7c1c20e4c0e8325d1e9b1e8fd1424a8ec197228e518  src/agentdrive/static/img/doodle-file.png
+ba04c9c6aa443b06e288e05bbf14547d310a865fe674c602d6a71ce8c829c9bf  src/agentdrive/static/img/doodle-folder-dark.png
+9dfd672d279d5b8205b5ab5f077b0559bbe64b39be3b4135aeb6492506adc107  src/agentdrive/static/img/doodle-folder.png
+425c24c22e835cfd187360950fe6ce39213d17750e8cd1b5287ba0985454c9cf  src/agentdrive/static/img/doodle-robot-dark.png
+08293ae81e472869a0d9280e278c7a292000d718ca7932d8d4db37c1f5c0b8a3  src/agentdrive/static/img/doodle-robot.png
+2f953eccd654fe59ee23170230a44203f60de1e459f7c938aa02255dc3beeb3a  src/agentdrive/static/img/hero-agents-dark.png
+27e5f33d783179de056785d2e5fd81722df3ff420b8cb95b4e888e1bbaf4204f  src/agentdrive/static/img/hero-agents.png
+c97e14556fedc16329b42192aaec600667b03340d3ce3453ba08ab04d1005daf  src/agentdrive/static/img/latex-pdf.png
+855dca8856d29be417e5a3faf9ff1305663ace92dd1bc5ec7c4741f285ec9b10  src/agentdrive/static/img/snipit-popup.png
+bc189b3f3bd6fc6ca461e566edee622fd59c6d8724c1ab20dd0ff417d30c77c0  src/agentdrive/static/og-image.png
+483c4a0396691993a641ec409c44b8b7e1daab0ae7e2b2944c4bc59520bb7655  src/agentdrive/static/vendor/pdfjs/images/loading-icon.gif

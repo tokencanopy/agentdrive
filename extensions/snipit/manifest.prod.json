@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "AgentDrive SnipIt",
+  "short_name": "SnipIt",
+  "version": "0.4.0",
+  "description": "Capture a screenshot straight into your AgentDrive, with the page it came from.",
+  "permissions": [
+    "activeTab",
+    "identity",
+    "notifications",
+    "offscreen",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://auth.tokencanopy.com/*",
+    "https://drive.tokencanopy.com/*",
+    "https://app.tokencanopy.com/*",
+    "https://share.tokencanopy.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://auth.tokencanopy.com https://drive.tokencanopy.com https://app.tokencanopy.com https://share.tokencanopy.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline';"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApZUYI+SZNgYR0CKwT2MAFSNsCm73cLSDGsRP4LTRCefN9btbMPe81t32PKNtBUwAcKhcgFTYb9IzItik+toBIYL7F4Twlv+9E9Ja/ID+67ILJwVCcYAJRZjtpof/1YARJPNZGpAvOFJvGv5MqcQfD7gdvXBzheN/LDs22SaJAjQWSL6l6vqLITJt7aeWRih4ips55+yV0zizh1ezIJndDO6rz2qNbloC718I7r8340JRE2fYZgGNnIkMMCSvUxMTJj4JQKgNSYFWrv9c3PI8XNuceUSWczJfNHlBGXvZfArrgLM5mmmbYJhMMSkHG3S33xm+CEk3yXy9liLtxJbvWwIDAQAB",
+  "minimum_chrome_version": "116",
+  "options_ui": {
+    "page": "src/options/options.html",
+    "open_in_tab": false
+  }
+}

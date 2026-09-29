@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>Diagram engine</title>
+</head>
+<body>
+<!-- The diagram engine's own document. Framed, same-origin and offscreen, by
+     `diagrams.js` on both viewer surfaces; never navigated to on its own.
+     It exists so mermaid can have the inline styles it needs for text
+     measurement under THIS document's policy — served by the allowlist with
+     `style-src 'unsafe-inline'` and `script-src 'self'` — while the page
+     that shows the diagram keeps `style-src 'self'` with nothing inline.
+     Nothing artifact-authored is ever loaded here: the parent posts diagram
+     SOURCE TEXT in, and receives an SVG STRING back. -->
+<script src="./vendor/mermaid/mermaid.min.js"></script>
+<script src="./diagram-frame.js"></script>
+</body>
+</html>

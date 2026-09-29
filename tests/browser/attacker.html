@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Same-origin sibling attacker</title>
+<script>
+  window.addEventListener("message", (event) => {
+    if (!event.data || event.data.type !== "browser.attack") return;
+    const viewer = window.parent.document.getElementById("private-viewer");
+    viewer.contentWindow.postMessage(event.data.payload, "http://viewer.localhost:8766");
+  });
+</script>

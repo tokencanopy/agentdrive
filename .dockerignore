@@ -1,0 +1,84 @@
+# The build context for this image is the AgentDrive root, and Docker reads
+# ONLY the `.dockerignore` at the context root — so this file is the one that
+# applies to the AgentDrive image, whatever repository holds it.
+#
+# There used to be a file here and it was DELETED when the port moved the
+# build to a repo-root context, precisely because it had become inert and
+# would have read as load-bearing while doing nothing. The context moved back
+# inside the app so that a checkout of AgentDrive alone can build the image
+# (open-source design §4.4), which brings the file back with it. Its rules are
+# the app-relevant subset of the root file's, restated rather than referenced:
+# an ignore file cannot include another one.
+.git
+
+# Node build output and installs. `mcp/{auth,server}/dist` in particular must
+# never enter the context: the image builds the sidecar from `src` with its
+# own pinned manifests, and a stale `dist` from a developer's laptop landing
+# in the layer cache is a build that ships something nobody reviewed.
+**/node_modules
+**/dist
+**/.next
+
+# Local secret material and generated cloud credentials must never enter a
+# build context, even when an auth action creates them in the tree. The list
+# is this app's OWN `.gitignore` read as a threat model rather than as a
+# convenience: anything it keeps out of the repository because it is private
+# has the same reason to stay out of a build context, and `docker build` from
+# a working tree is exactly where the two lists diverge.
+.env*
+!.env.example
+**/.env*
+!**/.env.example
+gha-creds-*.json
+**/gha-creds-*.json
+**/.pgpass
+**/application_default_credentials.json
+*.key
+**/*.key
+*.pem
+**/*.pem
+deploy/.deployrc
+docker-compose.override.yml
+.worktrees
+.superpowers
+
+# The filesystem object store a local `STORAGE_BACKEND=fs` run writes into.
+# Not secret, but unbounded: every `docker build` would otherwise hand the
+# daemon whatever a developer has uploaded.
+var
+
+# Coverage artifacts. Local tooling, and `htmlcov/` is thousands of files.
+.coverage
+.coverage.*
+htmlcov
+coverage.xml
+
+# Terraform downloads, state, variable values and saved plans are local
+# operator artifacts, not image inputs. This app owns its own Terraform tree
+# (`infra/terraform`, one state file per product), so the exclusion has to be
+# here as well as at the root.
+infra/terraform
+**/.terraform
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+**/terraform.tfvars
+**/*.auto.tfvars
+**/*.auto.tfvars.json
+
+# Python build/venv/cache artifacts. Without these, `COPY src` ships every
+# `__pycache__` inside it.
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.hypothesis
+**/*.egg-info
+
+# The legacy black-box harness. It needs its own `.env.e2e` (covered above)
+# and is never part of an image. The `archive/` and `.ai/` rules that stood
+# here were removed unread: neither directory exists any more, and this file's
+# own header argues against carrying a rule that does nothing.
+tests/e2e

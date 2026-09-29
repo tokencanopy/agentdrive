@@ -1,0 +1,80 @@
+/* Shares the popup's tokens; the layout differs because this is a page,
+   not a 320px panel. */
+:root {
+  --ink: #1A1714;
+  --fg-muted: #6e6960;
+  --bg: #FAF8F2;
+  --bg-elev: #F4F1E8;
+  --border: #E5E0D2;
+  --accent: #E26534;
+  --accent-strong: #C24E22;
+  --danger: #B3261E;
+  --r-sm: 4px;
+  --r-md: 6px;
+}
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+body { width: 520px; }
+
+#root { display: flex; flex-direction: column; }
+header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 600; letter-spacing: -0.01em; }
+.env { margin-left: auto; font-size: 11px; color: var(--fg-muted); font-family: ui-monospace, Menlo, monospace; }
+
+main { padding: 16px; display: flex; flex-direction: column; gap: 20px; }
+
+section { display: flex; flex-direction: column; gap: 8px; }
+h2 { margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-muted); }
+p.lede { margin: 0; color: var(--fg-muted); line-height: 1.45; }
+p.hint { margin: 0; font-size: 12px; color: var(--fg-muted); }
+
+button {
+  background: var(--ink); color: var(--bg);
+  border: 0; border-radius: var(--r-md);
+  padding: 8px 12px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.12s ease;
+}
+button:hover { opacity: 0.9; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.secondary { background: var(--bg-elev); color: var(--ink); }
+button.link { background: transparent; color: var(--accent-strong); padding: 2px 4px; font-weight: 500; text-decoration: underline; }
+button.danger { background: transparent; color: var(--danger); font-weight: 500; }
+
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+
+.card {
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 10px 12px;
+}
+.crumbs { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-word; }
+
+ul.picker { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-elev); }
+ul.picker li { border-bottom: 1px solid var(--border); }
+ul.picker li:last-child { border-bottom: 0; }
+ul.picker button {
+  width: 100%; text-align: left; background: transparent; color: var(--ink);
+  font-weight: 500; border-radius: 0; padding: 9px 12px;
+}
+ul.picker button:hover { background: var(--bg); }
+ul.picker .meta { color: var(--fg-muted); font-size: 11px; margin-left: 6px; }
+
+label.field { display: flex; align-items: center; gap: 8px; }
+label.field span { flex: 1; }
+select, input[type="text"] {
+  font: inherit; padding: 5px 8px; border: 1px solid var(--border);
+  border-radius: var(--r-sm); background: var(--bg); color: var(--ink);
+}
+input[type="text"] { width: 100%; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+
+.error { background: #FDECEA; color: #7A1C15; border-radius: var(--r-sm); padding: 8px 10px; line-height: 1.4; }
+.notice { background: var(--bg-elev); border-radius: var(--r-sm); padding: 8px 10px; color: var(--fg-muted); }
+.divider { height: 1px; background: var(--border); }

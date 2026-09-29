@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>{{ title }}</title>
+<meta property="og:type" content="{{ og_type }}" />
+<meta property="og:title" content="{{ title }}" />
+<meta property="og:site_name" content="AgentDrive by Token Canopy" />
+{%- if canonical_url %}
+<link rel="canonical" href="{{ canonical_url }}" />
+<meta property="og:url" content="{{ canonical_url }}" />
+{%- endif %}
+<meta name="description" content="{{ description }}" />
+<meta property="og:description" content="{{ description }}" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="{{ title }}" />
+<meta name="twitter:description" content="{{ description }}" />
+<link rel="stylesheet" href="/share-static/shell.css?v={{ asset_v }}" />
+{# The shell's only script, and it is enhancement ONLY: the header, the
+   metadata, the download link and the framed document are all server-rendered
+   above it. What it adds is the clipboard and the shared theme control,
+   so a reader with
+   script disabled still gets a complete, useful page (design §3.4).
+
+   Render-blocking rather than deferred, for the one reason `viewer.js` is:
+   it resolves the theme before the first paint, so a reader who chose dark
+   never watches the bar flash white. #}
+<script src="/share-static/shell.js?v={{ asset_v }}"></script>
+</head>
+<body class="tc-root shell-page">
+{# ONE header, and it lives here rather than in the frame on purpose.
+
+   This document is the trusted half of the split: it holds no artifact-
+   authored bytes at all, so the brand, the name and the actions a reader can
+   take are drawn by the origin they can verify in the address bar. The framed
+   renderer draws the document and nothing else — see `viewer.html`'s embed
+   branch, which is the same `chrome` split the private viewer already makes
+   for the console. Stating the name, the path and the size again inside the
+   frame said one fact three times before any content. #}
+<header class="shell-bar">
+  <a class="shell-lockup" href="https://tokencanopy.com">
+    <svg viewBox="0 0 28 28" width="20" height="20" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="25" height="25" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M7 18 L14 9 L21 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>AgentDrive<span class="shell-lockup-by"> by Token Canopy</span></span>
+  </a>
+  <span class="shell-sep" aria-hidden="true"></span>
+  <div class="shell-metadata">
+    <h1>
+      {%- if chip %}<span class="shell-kind">{{ chip }}</span>{% endif %}
+      <span class="shell-name">{{ title }}</span>
+    </h1>
+    <p>{{ meta_line }}</p>
+  </div>
+  {# The copy button — like the theme control below — ships hidden and is
+     revealed by the script that makes it work. A control that does nothing
+     when script is off is worse than no control; the download stays a plain
+     link precisely because it needs neither. #}
+  <div class="shell-actions">
+    {%- if console_url %}
+    <a class="shell-btn shell-console" href="{{ console_url }}">Open in console</a>
+    {%- endif %}
+    <button type="button" class="shell-btn" data-copy-url="{{ canonical_url }}" hidden>Copy link</button>
+    {%- if download_url %}
+    <a class="shell-btn" href="{{ download_url }}">Download</a>
+    {%- endif %}
+  </div>
+  {# Outside `.shell-actions`, and that placement is what makes the phone
+     layout fit: the theme control is chrome — it is about this page, not about
+     this document — so it rides with the brand on the narrow bar's first row
+     and leaves the three document actions a full row of their own. Four
+     nowrap buttons on one phone row is what overflowed the header. #}
+  <button type="button" class="shell-btn shell-theme" data-theme-toggle hidden>Auto</button>
+</header>
+<main class="shell-content">
+  <iframe
+    src="{{ embed_url }}"
+    title="View {{ title }}"
+    referrerpolicy="no-referrer"
+    {% if allow_fullscreen %}allow="fullscreen"{% endif %}
+  ></iframe>
+</main>
+<footer class="shell-foot">
+  {# All that is left down here. The provenance strip that used to sit at the
+     bottom — type, size, updated, canonical, and a second copy of the brand —
+     is now the header's own second line, the `<link rel="canonical">` in the
+     head, and the lockup: every one of those facts is stated once, above the
+     document, instead of twice around it.
+
+     This line stays because it is not a heading — it is the recovery path for
+     a frame that did not load, and it belongs under the frame it is about. #}
+  <p class="shell-fallback">
+    Preview not loading?
+    <a href="{{ renderer_url }}" referrerpolicy="no-referrer">Open content directly</a>
+  </p>
+</footer>
+</body>
+</html>
