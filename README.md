@@ -53,6 +53,27 @@ reads:
 - `COMPOSE_PROJECT_NAME` for a second install on the same machine; each
   project gets its own containers and volumes.
 
+**Maintenance runs itself.** The API container also runs the maintenance
+jobs on the hosted product's schedule (UTC): garbage collection of abandoned
+uploads hourly, the full sweep — purging expired deletes and unreferenced
+content — daily at 03:00, the same plus an orphan sweep on Sundays at 04:00,
+and usage maintenance every 15 minutes. Without them, deleted content is
+never reclaimed and storage only grows. The scheduler remembers the last
+minute it handled, so a job that came due while the stack was down runs once
+when it is back. See the schedule and its state, or run one job now:
+
+```bash
+docker compose -f compose.selfhost.yml exec api python -m agentdrive.jobs.scheduler --list
+docker compose -f compose.selfhost.yml exec api python -m agentdrive.jobs.scheduler --status
+docker compose -f compose.selfhost.yml exec api python -m agentdrive.jobs.scheduler --run gc-daily
+```
+
+A job that is already running holds its lock, so a second `--run` of it
+reports `"skipped": true` and does nothing. Not using this compose file? Set
+`SCHEDULER_ENABLED=true` (and `SCHEDULER_STATE_FILE` to a writable path) on
+the API container, or run the commands `--list` prints, on the same
+schedule, from your own scheduler with the API's settings.
+
 Data lives in the `agentdrive_pgdata` and `agentdrive_data` volumes.
 **Upgrade** with `git pull && docker compose -f compose.selfhost.yml up -d --build`
 (without `--build`, `up` keeps running the old image). `docker compose -f

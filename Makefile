@@ -2,10 +2,12 @@
 #
 # Everything here runs against your own checkout or install: the local stack,
 # the generated stylesheet, the model checker, the OpenAPI policy, the image,
-# and the maintenance jobs a deployment schedules. How you schedule those jobs
-# (cron, a Kubernetes CronJob, your cloud's scheduler) is your deployment's
-# business; each one is `python -m agentdrive.jobs.<name>` against the same
-# DATABASE_URL and store the API uses.
+# and the maintenance jobs a deployment must schedule. compose.selfhost.yml
+# runs them on their cadence inside the API container
+# (SCHEDULER_ENABLED=true starts `python -m agentdrive.jobs.scheduler`
+# there); anything else runs the commands
+# `python -m agentdrive.jobs.scheduler --list` prints, on that cadence,
+# against the same settings as the API. The targets below run one job now.
 
 SHELL := /usr/bin/env bash
 

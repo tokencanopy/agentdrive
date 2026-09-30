@@ -71,6 +71,14 @@ so authorization, grants and scope checks are one code path.
   `agentdrive.scripts.apply_schema`: an empty database takes `schema.sql` alone;
   anything else replays pending migrations. Never edit a shipped migration;
   fold a new one's end state into `schema.sql` in the same change.
+- **Maintenance jobs** — `jobs/`: garbage collection (`jobs/gc.py`, semantics
+  in `core/gc.py`) and usage maintenance (`jobs/usage_snapshot.py`), on the
+  cadence in `jobs/schedule.py`. A self-hosted install runs them with
+  `python -m agentdrive.jobs.scheduler`, which the process supervisor starts
+  inside the API container when `SCHEDULER_ENABLED=true` (as
+  `compose.selfhost.yml` sets it) — never as a separate container, so the jobs
+  that delete content cannot be configured apart from the API. Without it,
+  deleted content is never reclaimed.
 - **Formal model** — `specs/tla/ArtifactGC.tla`, the garbage collector's
   safety argument; its TLC configs run in CI.
 

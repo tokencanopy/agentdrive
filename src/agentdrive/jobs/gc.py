@@ -1,11 +1,13 @@
-"""Cloud Run Job entrypoint for the GC sweeper.
+"""Job entrypoint for the GC sweeper.
 
-Thin wrapper around ``GCSweeper(...).run()``. Cloud Scheduler invokes
+Thin wrapper around ``GCSweeper(...).run()``, run as
 ``python -m agentdrive.jobs.gc`` hourly with ``--sessions-only``, daily at
 03:00 UTC for the full sweep (session reconciliation + transfer cleanup +
 purge + CAS mark-sweep + scratch sweep), and weekly on Sunday 04:00 UTC with
-``--orphan-sweep`` appended. Operator runbook lives in ``deploy/README.md``;
-the sweep semantics live in ``agentdrive.core.gc``.
+``--orphan-sweep`` appended. That cadence is ``agentdrive.jobs.schedule``:
+a self-hosted install runs it with ``python -m agentdrive.jobs.scheduler``,
+a hosted deployment with its platform's scheduler. The sweep semantics live
+in ``agentdrive.core.gc``.
 
 CLI (the scheduled contract — do not change argument meanings):
   --dry-run        Preview without persisting: all database work runs inside

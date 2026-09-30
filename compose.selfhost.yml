@@ -5,8 +5,10 @@
 # from this file). Three services: `postgres` (plain postgres:16 — schema.sql
 # uses only built-in tsvector), `migrate` (the image running apply_schema
 # once, after Postgres is healthy), and `api` (the image under
-# AUTH_MODE=local with the filesystem object store on a named volume and the
-# MCP transport served at /mcp by the sidecar inside the same container).
+# AUTH_MODE=local with the filesystem object store on a named volume, the
+# MCP transport served at /mcp by the sidecar inside the same container, and
+# the job scheduler running garbage collection and usage maintenance there
+# too — without it deleted content is never reclaimed).
 #
 # Settings come from a `.env` beside this file, which every `docker compose`
 # command reads:
@@ -80,6 +82,12 @@ services:
       # loopback; the supervisor puts the sidecar into api-key mode.
       MCP_PROXY_URL: http://127.0.0.1:8081
       PORT: "8080"
+      # Run the maintenance jobs on their schedule (src/agentdrive/jobs/
+      # schedule.py) inside this container, so they can never be pointed at
+      # a different database or store than the API. The last handled minute
+      # persists on the data volume; a restart catches up what came due.
+      SCHEDULER_ENABLED: "true"
+      SCHEDULER_STATE_FILE: /data/.agentdrive-scheduler.json
     ports:
       - "${AGENTDRIVE_BIND:-127.0.0.1}:${AGENTDRIVE_PORT:-8080}:8080"
     volumes:
@@ -94,8 +102,12 @@ services:
       timeout: 5s
       retries: 30
     # The supervisor gives its children 10 s to exit; Docker's default grace
-    # period is also 10 s, so give the supervisor room to finish first.
+    # period is also 10 s, so give the supervisor room to finish first. A
+    # running job is terminated with its process group; its advisory lock is
+    # released with its database connection and the next run resumes.
     stop_grace_period: 20s
+    # A real PID 1 that reaps orphaned processes.
+    init: true
     restart: unless-stopped
 
 volumes:
