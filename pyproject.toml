@@ -20,7 +20,7 @@ dependencies = [
     # PyJWT verifies the Hub-issued product tokens (identity/product_token.py)
     # with RS256/ES256, which need `cryptography`; declare the extra rather
     # than inherit the package from google-auth.
-    "pyjwt[crypto]>=2.9",
+    "pyjwt[crypto]>=2.15.0",
     "openpyxl>=3.1.5",
     "mammoth>=1.11",
     "pyarrow>=18",
