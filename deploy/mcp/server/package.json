@@ -16,13 +16,13 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@tokencanopy/agentdrive-sdk": "0.0.4",
     "@tokencanopy/mcp-auth": "0.1.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.6.4",
     "typescript": "^6.0.3"
   },
   "engines": {
