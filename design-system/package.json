@@ -55,9 +55,9 @@
     "react-dom": "^18",
     "storybook": "^8",
     "typescript": "^5",
-    "vite": "^5",
+    "vite": "^8",
     "vite-plugin-dts": "^4",
-    "vitest": "^2"
+    "vitest": "^5"
   },
   "publishConfig": {
     "access": "public"
